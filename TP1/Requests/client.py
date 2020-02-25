@@ -1,5 +1,8 @@
 import mysql.connector
+import socket
+import threading
 from dateutil.parser import parse
+import time
 
 def initial_menu():
     option = input("What do you want to do? \n 1) Register new user \n 2) Consult users \n 3) Register new request\n")
@@ -8,7 +11,7 @@ def initial_menu():
 def add_user(name,address,phone):
     mycursor = mydb.cursor()
     # idProcesso ??? 
-    sql = "INSERT INTO Utente (nome, morada, telefone) VALUES (%s, %s)"
+    sql = "INSERT INTO Utente (nome, morada, telefone) VALUES (%s, %s, %s)"
     val = (name, address, phone)
     mycursor.execute(sql, val)
 
@@ -76,9 +79,32 @@ def execute(option):
         print("Wrong input. Please try again.\n")
         initial_menu()
 
+def fetch_user(id):
+    return id
 
-# SCRIPT:
-# maybe add user and password as script arguments ?
+def create_HL7_msg(request,user):
+    return "Msg"
+
+def worklist_listener():
+    last_row = 0
+    while True:
+        # read rows from worklist every 2 mins
+        time.sleep(120)
+        mycursor = mydb.cursor()
+        getNewRows = "SELECT * FROM Worklist WHERE id > %s"
+        mycursor.execute(getNewRows,last_row)
+        res = mycursor.fetchall()
+        for request in res:
+            user = fetch_user(id)
+            hl7msg = create_HL7_msg(request,user)
+            s.send(hl7msg)
+        last_row = mycursor.lastrowid
+           
+
+s = socket.socket()
+host = socket.gethostname()
+port = 9999
+s.bind(host,port)
 
 mydb = mysql.connector.connect(
   host="localhost",
@@ -88,6 +114,6 @@ mydb = mysql.connector.connect(
 )
 if mydb:
     print(" Connected to " + mydb)
-
+    wlThread = threading.Thread(target=worklist_listener)
     print("Welcome to the Requests UI!")
     initial_menu()
