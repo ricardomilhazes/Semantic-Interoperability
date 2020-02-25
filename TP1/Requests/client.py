@@ -79,12 +79,15 @@ def execute(option):
         print("Wrong input. Please try again.\n")
         initial_menu()
 
+# get user from DB with the given ID
 def fetch_user(id):
     return id
 
+# create msg with HL7 format
 def create_HL7_msg(request,user):
     return "Msg"
 
+# THREAD FUNC: contiuously reading from Worklist table and sending new requests
 def worklist_listener():
     last_row = 0
     while True:
@@ -99,7 +102,9 @@ def worklist_listener():
             hl7msg = create_HL7_msg(request,user)
             s.send(hl7msg)
         last_row = mycursor.lastrowid
-           
+
+
+# BEGIN SCRIPT
 
 s = socket.socket()
 host = socket.gethostname()
