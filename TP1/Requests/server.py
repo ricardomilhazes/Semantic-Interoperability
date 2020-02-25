@@ -8,7 +8,10 @@ def get_id_from_msg():
     return 0
 
 def remove_from_wl(id):
-    print("removed")
+    mycursor=mydb.cursor()
+    sql="DELETE FROM Worklist WHERE idWorkList=%s"    
+    mycursor.execute(sql,id)
+    print("pedido "+ str(id) +" removido da worklist")
 
 def update_db(id, status, report):
     print("updated")
@@ -18,13 +21,13 @@ def update_db(id, status, report):
 s = socket.socket()
 host = socket.gethostname()
 port = 9090
-s.bind(host,port)
+s.bind((host,port))
 
 mydb = mysql.connector.connect(
-  host="localhost",
-  user="yourusername",
-  passwd="yourpassword",
-  database="NOME_DA_DB"
+  host="Hostname",
+  user="Username",
+  passwd="Password",
+  database="DB_Name"
 )
 
 # wait for connections
