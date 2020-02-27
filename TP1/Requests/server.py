@@ -11,6 +11,7 @@ def remove_from_wl(id):
     mycursor=mydb.cursor()
     sql="DELETE FROM Worklist WHERE idWorkList=%s"    
     mycursor.execute(sql,id)
+    mydb.commit()
     print("pedido "+ str(id) +" removido da worklist")
 
 def update_db(id, status, report):
