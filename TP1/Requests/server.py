@@ -9,12 +9,21 @@ def get_id_from_msg():
 
 def remove_from_wl(id):
     mycursor=mydb.cursor()
+
     sql="DELETE FROM Worklist WHERE idWorkList=%s"    
     mycursor.execute(sql,id)
+
     print("pedido "+ str(id) +" removido da worklist")
 
 def update_db(id, status, report):
-    print("updated")
+    mycursor = mydb.cursor()
+    
+    sql = "UPDATE Request SET State = %s, Report = %s WHERE idRequest = %s"
+    val = (status,report,id)
+    mycursor.execute(sql,val)
+
+    mydb.commit()
+    print("Updated request: ", id)
 
 
 # BEGIN SCRIPT
