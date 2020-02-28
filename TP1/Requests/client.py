@@ -5,14 +5,14 @@ from dateutil.parser import parse
 import time
 
 def initial_menu():
-    option = input("What do you want to do? \n 1) Register new user \n 2) Consult users \n 3) Register new request\n")
+    option = input("What do you want to do? \n 1) Register new request\n 2) Consult requests\n 3) Consult report")
     execute(option)
 
-def add_user(name,address,phone):
+def add_user(name,address,mobile):
     mycursor = mydb.cursor()
-    # idProcesso ??? 
-    sql = "INSERT INTO Utente (nome, morada, telefone) VALUES (%s, %s, %s)"
-    val = (name, address, phone)
+    
+    sql = "INSERT INTO User (Name, Address, Mobile) VALUES (%s, %s, %s)"
+    val = (name, address, mobile)
     mycursor.execute(sql, val)
 
     mydb.commit()
@@ -23,58 +23,81 @@ def add_user(name,address,phone):
 def register_user():
     name = input("Name: ")
     address = input("Address: ")
-    phone = input("Phone Number: ")
-    if add_user(name,address,phone):
+    mobile = input("Phone Number: ")
+
+    if add_user(name,address,mobile):
         print("User registered with success.")
     else:
         print("An error ocurred, please try again.")
     initial_menu()
 
-def consult_users():
+def user_exists(user):
     mycursor = mydb.cursor()
-    mycursor.execute("SELECT * FROM Utente")
-    res = mycursor.fetchall()
 
-    print("ID | Name | Address | Phone Number")
-    for user in res:
-        print(user[0], "|", user[1], "|", user[2], "|", user[3])
+    sql = "SELECT * FROM User WHERE idUser = %s"
+    mycursor.execute(sql,user)
+    res = mycursor.fetchone()
 
-    initial_menu()
+    if res:
+      return True
 
-def add_request_db(reqType, date, user, episode, obs):
+def add_request_db(reqType, date, user, obs):
     parsedDate = parse(date).strftime("%d/%m/%Y %H:%M")
 
-    mycursor = mydb.cursor()
-    sql_db = "INSERT INTO Pedido (tipo, episodio, data, relatorio, estado, obs, idutente) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-    val = (reqType, episode, parsedDate, '', '0', obs, user)
-    mycursor.execute(sql_db, val)
-    mydb.commit()
-    print("Record inserted. ID: ", mycursor.lastrowid)
+    if not user_exists(user):
+      print("User in not in our database, please insert new data: ")
+      register_user()
 
-    sql_worklist = "INSERT INTO Worklist (tipo, episodio, data, relatorio, estado, obs, idutente) VALUES (%s, %s, %s, %s, %s, %s, %s)"
-    mycursor.execute(sql_worklist, val)
+    mycursor = mydb.cursor()
+
+    sql_db = "INSERT INTO Pedido (State, Date, Medical_Act, User_idUser, Report, Notes) VALUES (%s, %s, %s, %s, %s, %s)"
+    val = ('0', date, reqType, user, '', obs)
+    mycursor.execute(sql_db, val)
+
     mydb.commit()
     print("Record inserted. ID: ", mycursor.lastrowid)
 
     return True
 
 def register_request():
-    reqType = input("Type: ")
+    reqType = input("Medical_Act: ")
     date = input("Date (DD/MM/YYYY HH:MM): ")
     user = input("User: ")
-    episode = input("Episode: ")
-    obs = input("Obs: ")
-    if add_request_db(reqType, date, user, episode, obs):
+    obs = input("Notes: ")
+
+    if add_request_db(reqType, date, user, obs):
             print("Request registered with success.")
+    initial_menu()
+
+def consult_requests():
+    mycursor = mydb.cursor()
+
+    sql = "SELECT * FROM Request"
+    mycursor.execute(sql)
+    res = mycursor.fetchall()
+  
+    print("ID | State | Date")
+      for request in res:
+          print(request[0], "|", request[1], "|", request[2])
+    initial_menu()
+
+def consult_report(request):
+    mycursor = mydb.cursor()
+
+    sql = "SELECT Report FROM Request WHERE idRequest = %s"
+    mycursor.execute(sql,request)
+    res = mycursor.fetchone()
+
+    print("Report: ", res)
     initial_menu()
 
 def execute(option):
     if option == "1":
-        register_user()
-    elif option == "2":
-        consult_users()
-    elif option == "3":
         register_request()
+    elif option == "2":
+        consult_request()
+    elif option == "3":
+        consult_report()
     else:
         print("Wrong input. Please try again.\n")
         initial_menu()
