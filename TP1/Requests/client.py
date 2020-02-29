@@ -18,15 +18,19 @@ def add_user(name,address,mobile):
     mydb.commit()
     print("Record inserted. ID: ", mycursor.lastrowid)
 
-    return True
+    return True, mycursor.lastrowid
 
 def register_user():
     name = input("Name: ")
     address = input("Address: ")
     mobile = input("Phone Number: ")
 
-    if add_user(name,address,mobile):
+    res, id = add_user(name, address, mobile)
+
+    if res:
         print("User registered with success.")
+        return id
+
     else:
         print("An error ocurred, please try again.")
     initial_menu()
@@ -42,16 +46,17 @@ def user_exists(user):
       return True
 
 def add_request_db(reqType, date, user, obs):
-    parsedDate = parse(date).strftime("%d/%m/%Y %H:%M")
 
     if not user_exists(user):
       print("User in not in our database, please insert new data: ")
-      register_user()
+      user = register_user()
+
+    parsedDate = parse(date).strftime("%d/%m/%Y %H:%M")
 
     mycursor = mydb.cursor()
 
     sql_db = "INSERT INTO Pedido (State, Date, Medical_Act, User_idUser, Report, Notes) VALUES (%s, %s, %s, %s, %s, %s)"
-    val = ('0', date, reqType, user, '', obs)
+    val = ('0', parsedDate, reqType, user, '', obs)
     mycursor.execute(sql_db, val)
 
     mydb.commit()
@@ -77,11 +82,13 @@ def consult_requests():
     res = mycursor.fetchall()
   
     print("ID | State | Date")
-      for request in res:
-          print(request[0], "|", request[1], "|", request[2])
+    for request in res:
+        print(request[0], "|", request[1], "|", request[2])
     initial_menu()
 
-def consult_report(request):
+def consult_report():
+    request = input("Which request you wish do see report: ")
+
     mycursor = mydb.cursor()
 
     sql = "SELECT Report FROM Request WHERE idRequest = %s"
@@ -95,7 +102,7 @@ def execute(option):
     if option == "1":
         register_request()
     elif option == "2":
-        consult_request()
+        consult_requests()
     elif option == "3":
         consult_report()
     else:

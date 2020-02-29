@@ -40,8 +40,8 @@ def consult_requests():
   res = mycursor.fetchall()
 
   print("ID | State | Date")
-    for request in res:
-        print(request[0], "|", request[1], "|", request[2])
+  for request in res:
+    print(request[0], "|", request[1], "|", request[2])
   initial_menu()
 
 def change_request_state(request):
