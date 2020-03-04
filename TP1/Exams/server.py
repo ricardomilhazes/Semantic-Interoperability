@@ -14,9 +14,20 @@ def remove_from_wl(id):
     sql="DELETE FROM Worklist WHERE idWorkList=%s"    
     mycursor.execute(sql,id)
     print("pedido "+ str(id) +" removido da worklist")
+    mydb.commit()
 
-def update_db(id, status, report):
-    print("updated")
+def update_db(idExam, status, date, medical_act, idUser, name, idProcess, address, mobile, notes, report):
+    mycursor=mydb.cursor()
+
+    sql = "IF EXISTS (SELECT * FROM User WHERE idUser = %s) UPDATE User SET Name = %s, idProcess = %s, Address = %s, Mobile = %s ELSE INSERT INTO User VALUES(%s,%s,%s,%s)"
+    val = (idUser,name,idProcess,address,mobile,name,idProcess,address,mobile)
+    mycursor.execute(sql,val)
+
+    sql2 = "INSERT INTO Exam VALUES (%s,%s,%s,%s,%s,%s,%s)"
+    val2 = (idExam,status,date,medical_act,idUser,report,notes)
+    mycursor.execute(sql2,val2)
+
+    mydb.commit()
 
 
 # BEGIN SCRIPT
@@ -43,10 +54,16 @@ while True:
         id = get_id_from_msg()
         remove_from_wl(id)
     else:
-        # id = message.id
-        # status = message.status
-        # report = message.report
-        id = 0
-        status = 1
-        report = 'test'
-        update_db(id, status, report)
+        id = message.ORM_O01_ORDER.ORC.orc_2.value
+        status = message.ORM_O01_ORDER.orc.orc_1.value
+        date = message.ORM_O01_ORDER.ORC.orc_10.value
+        medical_act = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_4.value
+        idUser = message.ORM_O01_PATIENT.pid.pid_2.value
+        name = message.ORM_O01_PATIENT.pid.pid_3.value
+        idProcess = message.ORM_O01_PATIENT.pid.pid_5.value
+        address = message.ORM_O01_PATIENT.pid.pid_11.value
+        mobile = message.ORM_O01_PATIENT.pid.pid_13.value
+        notes = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_13.value
+        report = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12.value
+        update_db(id,status,report,medical_act,idUser,name,idProcess,address,mobile,notes,report)
+        s.send("ACK-" + ",".join(id)+"$")

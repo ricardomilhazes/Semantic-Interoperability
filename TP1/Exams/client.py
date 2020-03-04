@@ -3,6 +3,8 @@
 import mysql.connector
 import socket
 import threading
+from hl7apy import core
+from hl7apy.consts import VALIDATION_LEVEL
 from dateutil.parser import parse
 import time
 
@@ -76,12 +78,67 @@ def execute(option):
         initial_menu()
 
 # get user from DB with the given ID
-def fetch_user(id):
-    return id
+# def fetch_user(id):
+#    return id
 
 # create msg with HL7 format
-def create_HL7_msg(request,user):
-    return "Msg"
+def create_HL7_msg(request):
+    
+    # Create Message
+    hl7 = core.Message("ORM_O01", validation_level=VALIDATION_LEVEL.STRICT)
+
+    # Message Header
+    hl7.msh.msh_3 = "PedidosClient"
+    hl7.msh.msh_4 = "PedidosClient"
+    hl7.msh.msh_5 = "ExamesServer"
+    hl7.msh.msh_6 = "ExamesServer"
+    hl7.msh.msh_9 = "ORM^O01^ORM_O01"
+    hl7.msh.msh_10 = str(request[0])
+    hl7.msh.msh_11 = "P"
+
+    # PID
+    hl7.add_group("ORM_O01_PATIENT")
+    hl7.ORM_O01_PATIENT.pid.pid_2 = str(request[5])
+    hl7.ORM_O01_PATIENT.pid.pid_3 = str(request[6])
+    hl7.ORM_O01_PATIENT.pid.pid_5 = str(request[7])
+    hl7.ORM_O01_PATIENT.pid.pid_11 = str(request[8])
+    hl7.ORM_O01_PATIENT.pid.pid_13 = str(request[9])
+
+    # PV1
+    hl7.ORM_O01_PATIENT.add_group("ORM_O01_PATIENT_VISIT")
+    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.add_segment("PV1")
+    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.PV1.pv1_1 = "1"
+    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.PV1.pv1_2 = "1"
+
+    # ORC
+    if request[2] == '-1':
+        hl7.ORM_O01_ORDER.orc.orc_1 = '-1'
+    else:
+        hl7.ORM_O01_ORDER.orc.orc_1 = '0'
+        hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
+        hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
+
+    # OBR
+    hl7.ORM_O01_ORDER.add_group("ORM_O01_ORDER_DETAIL")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_segment("ORM_O01_ORDER_CHOICE")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("OBR")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_13 = request[10]
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12 = request[11]
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_4 = request[4]
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RQD")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RQ1")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RXO")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("ODS")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("ODT")
+
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODS.ods_1 = ""
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODS.ods_3 = ""
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODT.odt_1 = ""
+
+    assert hl7.validate() is True
+    print(str(hl7.value))
+
+    return hl7.value
 
 # THREAD FUNC: contiuously reading from Worklist table and sending new requests
 def worklist_listener():
@@ -94,8 +151,8 @@ def worklist_listener():
         mycursor.execute(getNewRows,last_row)
         res = mycursor.fetchall()
         for request in res:
-            user = fetch_user(id)
-            hl7msg = create_HL7_msg(request,user)
+            #user = fetch_user(id)
+            hl7msg = create_HL7_msg(request)
             s.send(hl7msg)
         last_row = mycursor.lastrowid
 

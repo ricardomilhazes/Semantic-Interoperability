@@ -44,6 +44,7 @@ mydb = mysql.connector.connect(
 s.listen()
 
 while True:
+    ids = []
     c, addr = s.accept()
     msgBytes = c.recv(1024)
     message = parse_message(msgBytes)
@@ -51,10 +52,8 @@ while True:
         id = get_id_from_msg()
         remove_from_wl(id)
     else:
-        # id = message.id
-        # status = message.status
-        # report = message.report
-        id = 0
-        status = 1
-        report = 'test'
-        update_db(id, status, report)
+        id = message.ORM_O01_ORDER.ORC.orc_2.value
+        status = message.ORM_O01_ORDER.orc.orc_1.value
+        report = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12.value
+        update_db(id,status,report)
+        s.send("ACK-" + ",".join(id)+"$")
