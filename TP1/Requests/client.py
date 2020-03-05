@@ -213,6 +213,7 @@ mydb = mysql.connector.connect(
 )
 if mydb:
     print(" Connected to " + str(mydb))
-    threading.Thread(target=worklist_listener).start()
+    wlThread = threading.Thread(target=worklist_listener)
+    wlThread.start()
     print("Welcome to the Requests UI!")
     initial_menu()

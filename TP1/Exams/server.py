@@ -38,16 +38,19 @@ serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 serversocket.bind(('localhost', 9999))
 #become a server socket
 serversocket.listen(5)
+print("Waiting for connections.")
 
 mydb = mysql.connector.connect(
   host="127.0.0.1",
   user="root",
-  passwd="251998tds",
+  passwd="",
   database="exams"
 )
+print("Connected to",str(mydb))
 
 while True:
     c, addr = serversocket.accept()
+    print("New connection from",addr)
     msgBytes = c.recv(1024)
     message = parse_message(msgBytes)
     if parse_field(msgBytes,"MSH_9").to_er7() == "ACK":
