@@ -17,7 +17,7 @@ def add_report(request,report):
     mycursor = mydb.cursor()
 
     sql = "UPDATE Exam SET Report = %s, State = '2' WHERE idRequest = %s"
-    mycursor.execute(sql,report,request)
+    mycursor.execute(sql,(report,request,))
 
     mydb.commit()
     print("Report added. ID: ", mycursor.lastrowid)
@@ -50,7 +50,7 @@ def change_request_state(request):
     mycursor = mydb.cursor()
 
     sql = "UPDATE Exam SET State = '1' WHERE idRequest = %s"
-    mycursor.execute(sql,request)
+    mycursor.execute(sql,(request,))
 
     mydb.commit()
     print("Exam performed. ID: ", mycursor.lastrowid)
@@ -164,10 +164,10 @@ port = 9999
 s.bind((host,port))
 
 mydb = mysql.connector.connect(
-  host="Hostname",
-  user="Username",
-  passwd="Password",
-  database="DB_Name"
+  host="127.0.0.1",
+  user="root",
+  passwd="",
+  database="exams"
 )
 if mydb:
     print(" Connected to " + str(mydb))
