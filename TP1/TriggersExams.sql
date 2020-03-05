@@ -5,7 +5,7 @@ AFTER UPDATE ON exam
 FOR EACH ROW
 INSERT INTO worklist
 SELECT NEW.idRequest,NEW.State,NEW.Date,
-		NEW.Medical_Act,NEW.idUser,NEW.Report,NEW.Notes
+		NEW.Medical_Act,NEW.User_idUser,NEW.Report,NEW.Notes
         name,idProcess,address,mobile,notes
 FROM user
-WHERE NEW.idUser = user.idUser;
+WHERE NEW.User_idUser = user.idUser;

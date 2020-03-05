@@ -4,6 +4,8 @@
 
 import socket
 import mysql.connector
+from hl7apy import core
+from hl7apy.consts import VALIDATION_LEVEL
 from hl7apy.parser import parse_message, parse_field
 
 def get_id_from_msg():
@@ -66,4 +68,14 @@ while True:
         notes = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_13.value
         report = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12.value
         update_db(id,status,report,medical_act,idUser,name,idProcess,address,mobile,notes,report)
-        s.send("ACK-" + ",".join(id)+"$")
+        hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
+        hl7.msh.msh_3 = "PedidosServer"
+        hl7.msh.msh_4 = "PedidosServer"
+        hl7.msh.msh_5 = "ExamesServer"
+        hl7.msh.msh_6 = "ExamesServer"
+        hl7.msh.msh_10 = str(id)
+        hl7.msh.msh_9 = "ACK"
+        hl7.msh.msh_11 = "P"
+        hl7.msa.msa_2 = str(id)
+        hl7.msa.msa_1 = "AA"
+        s.send(hl7)

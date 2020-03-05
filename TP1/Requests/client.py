@@ -10,11 +10,11 @@ def initial_menu():
     option = input("What do you want to do? \n 1) Register new request\n 2) Consult requests\n 3) Consult report")
     execute(option)
 
-def add_user(name,address,mobile):
+def add_user(name,address,mobile,idProcess):
     mycursor = mydb.cursor()
     
-    sql = "INSERT INTO User (Name, Address, Mobile) VALUES (%s, %s, %s)"
-    val = (name, address, mobile)
+    sql = "INSERT INTO User (Name, Address, Mobile,idProcess) VALUES (%s, %s, %s,%s)"
+    val = (name, address, mobile,idProcess,)
     mycursor.execute(sql, val)
 
     mydb.commit()
@@ -26,8 +26,9 @@ def register_user():
     name = input("Name: ")
     address = input("Address: ")
     mobile = input("Phone Number: ")
+    idProcess = input("Process ID: ")
 
-    res, id = add_user(name, address, mobile)
+    res, id = add_user(name, address, mobile,idProcess)
 
     if res:
         print("User registered with success.")
@@ -41,7 +42,7 @@ def user_exists(user):
     mycursor = mydb.cursor()
 
     sql = "SELECT * FROM User WHERE idUser = %s"
-    mycursor.execute(sql,user)
+    mycursor.execute(sql,(user,))
     res = mycursor.fetchone()
 
     if res:
@@ -53,12 +54,12 @@ def add_request_db(reqType, date, user, obs):
       print("User in not in our database, please insert new data: ")
       user = register_user()
 
-    parsedDate = parse(date).strftime("%d/%m/%Y %H:%M")
+    parsedDate = parse(date).strftime("%Y-%m-%d %H:%M:%S")
 
     mycursor = mydb.cursor()
 
-    sql_db = "INSERT INTO Pedido (State, Date, Medical_Act, User_idUser, Report, Notes) VALUES (%s, %s, %s, %s, %s, %s)"
-    val = ('0', parsedDate, reqType, user, '', obs)
+    sql_db = "INSERT INTO Request VALUES (%s,%s, %s, %s, %s, %s,%s)"
+    val = (None,'0', parsedDate, reqType, user,'',obs,)
     mycursor.execute(sql_db, val)
 
     mydb.commit()
@@ -68,7 +69,7 @@ def add_request_db(reqType, date, user, obs):
 
 def register_request():
     reqType = input("Medical_Act: ")
-    date = input("Date (DD/MM/YYYY HH:MM): ")
+    date = input("Date (YYYY-MM-DD HH:MM): ")
     user = input("User: ")
     obs = input("Notes: ")
 
@@ -94,7 +95,7 @@ def consult_report():
     mycursor = mydb.cursor()
 
     sql = "SELECT Report FROM Request WHERE idRequest = %s"
-    mycursor.execute(sql,request)
+    mycursor.execute(sql,(request,))
     res = mycursor.fetchone()
 
     print("Report: ", res)
@@ -116,7 +117,7 @@ def fetch_user(id):
     mycursor = mydb.cursor()
 
     sql = "SELECT * FROM User WHERE idUser = %s"
-    mycursor.execute(sql,id)
+    mycursor.execute(sql,(id,))
     res = mycursor.fetchone()
 
     return res
@@ -188,7 +189,7 @@ def worklist_listener():
         time.sleep(120)
         mycursor = mydb.cursor()
         getNewRows = "SELECT * FROM Worklist WHERE id > %s"
-        mycursor.execute(getNewRows,last_row)
+        mycursor.execute(getNewRows,(last_row,))
         res = mycursor.fetchall()
         for request in res:
             hl7msg = create_HL7_msg(request)
@@ -204,10 +205,10 @@ port = 9999
 s.bind((host,port))
 
 mydb = mysql.connector.connect(
-  host="Hostname",
-  user="Username",
-  passwd="Password",
-  database="DB_Name"
+  host="127.0.0.1",
+  user="root",
+  passwd="",
+  database="requests"
 )
 if mydb:
     print(" Connected to " + str(mydb))
