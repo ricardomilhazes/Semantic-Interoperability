@@ -14,7 +14,7 @@ def get_id_from_msg():
 def remove_from_wl(id):
     mycursor=mydb.cursor()
     sql="DELETE FROM Worklist WHERE idWorkList=%s"    
-    mycursor.execute(sql,id)
+    mycursor.execute(sql,(id,))
     print("pedido "+ str(id) +" removido da worklist")
     mydb.commit()
 
@@ -22,11 +22,11 @@ def update_db(idExam, status, date, medical_act, idUser, name, idProcess, addres
     mycursor=mydb.cursor()
 
     sql = "IF EXISTS (SELECT * FROM User WHERE idUser = %s) UPDATE User SET Name = %s, idProcess = %s, Address = %s, Mobile = %s ELSE INSERT INTO User VALUES(%s,%s,%s,%s)"
-    val = (idUser,name,idProcess,address,mobile,name,idProcess,address,mobile)
+    val = (idUser,name,idProcess,address,mobile,name,idProcess,address,mobile,)
     mycursor.execute(sql,val)
 
     sql2 = "INSERT INTO Exam VALUES (%s,%s,%s,%s,%s,%s,%s)"
-    val2 = (idExam,status,date,medical_act,idUser,report,notes)
+    val2 = (idExam,status,date,medical_act,idUser,report,notes,)
     mycursor.execute(sql2,val2)
 
     mydb.commit()
@@ -39,10 +39,10 @@ port = 9090
 s.bind((host,port))
 
 mydb = mysql.connector.connect(
-  host="Hostname",
-  user="Username",
-  passwd="Password",
-  database="DB_Name"
+  host="127.0.0.1",
+  user="root",
+  passwd="251998tds",
+  database="exams"
 )
 
 # wait for connections
