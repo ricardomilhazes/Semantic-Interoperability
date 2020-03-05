@@ -39,9 +39,9 @@ print("Waiting for connections.")
 
 
 mydb = mysql.connector.connect(
-  host="127.0.0.1",
+  host="localhost",
   user="root",
-  passwd="",
+  passwd="rufito12",
   database="requests"
 )
 print("Connected to",str(mydb))
@@ -52,14 +52,14 @@ while True:
     c, addr = serversocket.accept()
     print("New connection from",addr)
     msgBytes = c.recv(1024)
-    message = parse_message(msgBytes)
-    if parse_field(msgBytes,"MSH_9").to_er7() == "ACK":
-        id = parse_field(msgBytes,"MSH_10").to_er7()
+    message = msgBytes.decode('utf-8')
+    if message.msh.msh_9.value == "ACK":
+        id = message.msh.msh_10.value
         remove_from_wl(id)
     else:
         id = message.ORM_O01_ORDER.ORC.orc_2.value
         status = message.ORM_O01_ORDER.orc.orc_1.value
-        report = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12.value
+        report = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.NTE.nte_3.value
         update_db(id,status,report)
         hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
         hl7.msh.msh_3 = "PedidosServer"
@@ -71,6 +71,6 @@ while True:
         hl7.msh.msh_11 = "P"
         hl7.msa.msa_2 = str(id)
         hl7.msa.msa_1 = "AA"
-        serversocket.send(hl7)
+        serversocket.send(hl7.value.encode('utf-8'))
 
 

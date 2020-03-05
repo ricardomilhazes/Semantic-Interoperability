@@ -153,7 +153,7 @@ def worklist_listener():
         for request in res:
             #user = fetch_user(id)
             hl7msg = create_HL7_msg(request)
-            s.send(hl7msg)
+            s.send(hl7msg.encode('utf-8'))
         last_row = mycursor.lastrowid
 
 #BEGIN SCRIPT
@@ -164,9 +164,9 @@ port = 9090
 s.connect((host,port))
 
 mydb = mysql.connector.connect(
-  host="127.0.0.1",
+  host="localhost",
   user="root",
-  passwd="",
+  passwd="rufito12",
   database="exams"
 )
 if mydb:

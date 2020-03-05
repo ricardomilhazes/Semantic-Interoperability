@@ -160,21 +160,11 @@ def create_HL7_msg(request):
         hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
 
     # OBR
-    hl7.ORM_O01_ORDER.add_group("ORM_O01_ORDER_DETAIL")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_segment("ORM_O01_ORDER_CHOICE")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("OBR")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_13 = request[10]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12 = request[11]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_4 = request[4]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RQD")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RQ1")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RXO")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("ODS")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("ODT")
-
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODS.ods_1 = ""
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODS.ods_3 = ""
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODT.odt_1 = ""
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_segment("NTE")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_segment("DG1")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.DG1.dg1_3 = request[10]
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.NTE.nte_3 = request[11]
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.DG1.dg1_4 = request[4]
 
     assert hl7.validate() is True
     print(str(hl7.value))
@@ -186,14 +176,14 @@ def worklist_listener():
     last_row = 0
     while True:
         # read rows from worklist every 2 mins
-        time.sleep(120)
+        time.sleep(5)
         mycursor = mydb.cursor()
-        getNewRows = "SELECT * FROM Worklist WHERE id > %s"
+        getNewRows = "SELECT * FROM Worklist WHERE idWorkList > %s"
         mycursor.execute(getNewRows,(last_row,))
         res = mycursor.fetchall()
         for request in res:
             hl7msg = create_HL7_msg(request)
-            s.send(hl7msg)
+            s.send(hl7msg.encode('utf-8'))
         last_row = mycursor.lastrowid
 
 
@@ -206,9 +196,9 @@ port = 9999
 s.connect((host,port))
 
 mydb = mysql.connector.connect(
-  host="127.0.0.1",
+  host="localhost",
   user="root",
-  passwd="",
+  passwd="rufito12",
   database="requests"
 )
 if mydb:
