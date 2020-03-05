@@ -199,10 +199,11 @@ def worklist_listener():
 
 # BEGIN SCRIPT
 
-s = socket.socket()
-host = socket.gethostname()
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# exams server host and port:
+host = 'localhost'
 port = 9999
-s.bind((host,port))
+s.connect((host,port))
 
 mydb = mysql.connector.connect(
   host="127.0.0.1",
@@ -212,6 +213,6 @@ mydb = mysql.connector.connect(
 )
 if mydb:
     print(" Connected to " + str(mydb))
-    wlThread = threading.Thread(target=worklist_listener)
+    threading.Thread(target=worklist_listener).start()
     print("Welcome to the Requests UI!")
     initial_menu()

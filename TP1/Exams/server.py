@@ -33,10 +33,11 @@ def update_db(idExam, status, date, medical_act, idUser, name, idProcess, addres
 
 
 # BEGIN SCRIPT
-s = socket.socket()
-host = socket.gethostname()
-port = 9090
-s.bind((host,port))
+
+serversocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+serversocket.bind(('localhost', 9999))
+#become a server socket
+serversocket.listen(5)
 
 mydb = mysql.connector.connect(
   host="127.0.0.1",
@@ -45,11 +46,8 @@ mydb = mysql.connector.connect(
   database="exams"
 )
 
-# wait for connections
-s.listen()
-
 while True:
-    c, addr = s.accept()
+    c, addr = serversocket.accept()
     msgBytes = c.recv(1024)
     message = parse_message(msgBytes)
     if parse_field(msgBytes,"MSH_9").to_er7() == "ACK":
@@ -67,7 +65,11 @@ while True:
         mobile = message.ORM_O01_PATIENT.pid.pid_13.value
         notes = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_13.value
         report = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12.value
+
+        # update database
         update_db(id,status,report,medical_act,idUser,name,idProcess,address,mobile,notes,report)
+
+        # send ack
         hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
         hl7.msh.msh_3 = "PedidosServer"
         hl7.msh.msh_4 = "PedidosServer"
@@ -78,4 +80,4 @@ while True:
         hl7.msh.msh_11 = "P"
         hl7.msa.msa_2 = str(id)
         hl7.msa.msa_1 = "AA"
-        s.send(hl7)
+        serversocket.send(hl7)

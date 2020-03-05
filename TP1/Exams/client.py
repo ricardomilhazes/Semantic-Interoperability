@@ -158,10 +158,10 @@ def worklist_listener():
 
 #BEGIN SCRIPT
 
-s = socket.socket()
-host = socket.gethostname()
-port = 9999
-s.bind((host,port))
+s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+host = 'localhost'
+port = 9090
+s.connect((host,port))
 
 mydb = mysql.connector.connect(
   host="127.0.0.1",
