@@ -103,6 +103,7 @@ def create_HL7_msg(request):
     hl7.ORM_O01_PATIENT.pid.pid_5 = str(request[7])
     hl7.ORM_O01_PATIENT.pid.pid_11 = str(request[8])
     hl7.ORM_O01_PATIENT.pid.pid_13 = str(request[9])
+    hl7.ORM_O01_PATIENT.nte.nte_3 = str(request[10])
 
     # PV1
     hl7.ORM_O01_PATIENT.add_group("ORM_O01_PATIENT_VISIT")
@@ -118,22 +119,9 @@ def create_HL7_msg(request):
         hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
         hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
 
-    # OBR
-    hl7.ORM_O01_ORDER.add_group("ORM_O01_ORDER_DETAIL")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_segment("ORM_O01_ORDER_CHOICE")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("OBR")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_13 = request[10]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_12 = request[11]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.OBR.obr_4 = request[4]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RQD")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RQ1")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("RXO")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("ODS")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.add_segment("ODT")
-
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODS.ods_1 = ""
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODS.ods_3 = ""
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_ORDER_CHOICE.ODT.odt_1 = ""
+    # NTE
+    hl7.nte.nte_3 = str(request[11])
+    hl7.nte.nte_4 = str(request[4])
 
     assert hl7.validate() is True
     print(str(hl7.value))
@@ -147,8 +135,8 @@ def worklist_listener():
         # read rows from worklist every 2 mins
         time.sleep(120)
         mycursor = mydb.cursor()
-        getNewRows = "SELECT * FROM Worklist WHERE id > %s"
-        mycursor.execute(getNewRows,last_row)
+        getNewRows = "SELECT * FROM Worklist WHERE idWorkList > %s"
+        mycursor.execute(getNewRows,(last_row,))
         res = mycursor.fetchall()
         for request in res:
             #user = fetch_user(id)

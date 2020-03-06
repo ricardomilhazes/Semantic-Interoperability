@@ -144,6 +144,7 @@ def create_HL7_msg(request):
     hl7.ORM_O01_PATIENT.pid.pid_5 = str(request[7])
     hl7.ORM_O01_PATIENT.pid.pid_11 = str(request[8])
     hl7.ORM_O01_PATIENT.pid.pid_13 = str(request[9])
+    hl7.ORM_O01_PATIENT.nte.nte_3 = str(request[10])
 
     # PV1
     hl7.ORM_O01_PATIENT.add_group("ORM_O01_PATIENT_VISIT")
@@ -159,12 +160,9 @@ def create_HL7_msg(request):
         hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
         hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
 
-    # OBR
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_segment("NTE")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_segment("DG1")
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.DG1.dg1_3 = request[10]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.NTE.nte_3 = request[11]
-    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.DG1.dg1_4 = request[4]
+    # NTE
+    hl7.nte.nte_3 = str(request[11])
+    hl7.nte.nte_4 = str(request[4])
 
     assert hl7.validate() is True
 

@@ -53,13 +53,14 @@ while True:
     print("New connection from",addr)
     msgBytes = c.recv(1024)
     message = msgBytes.decode('utf-8')
-    if message.msh.msh_9.value == "ACK":
-        id = message.msh.msh_10.value
+    messageParsed = parse_message(message)
+    if parse_field(message,"MSH_9").to_er7() == "ACK":
+        id = messageParsed.msh.msh_10.value
         remove_from_wl(id)
     else:
-        id = message.ORM_O01_ORDER.ORC.orc_2.value
-        status = message.ORM_O01_ORDER.orc.orc_1.value
-        report = message.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.NTE.nte_3.value
+        id = messageParsed.ORM_O01_ORDER.ORC.orc_2.value
+        status = messageParsed.ORM_O01_ORDER.orc.orc_1.value
+        report = messageParsed.nte.nte_3.value
         update_db(id,status,report)
         hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
         hl7.msh.msh_3 = "PedidosServer"
@@ -71,6 +72,6 @@ while True:
         hl7.msh.msh_11 = "P"
         hl7.msa.msa_2 = str(id)
         hl7.msa.msa_1 = "AA"
-        serversocket.send(hl7.value.encode('utf-8'))
+        c.send(hl7.value.encode('utf-8'))
 
 
