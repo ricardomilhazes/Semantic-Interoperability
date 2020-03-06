@@ -167,7 +167,6 @@ def create_HL7_msg(request):
     hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.DG1.dg1_4 = request[4]
 
     assert hl7.validate() is True
-    print(str(hl7.value))
 
     return hl7.value
     
@@ -183,6 +182,7 @@ def worklist_listener():
         res = mycursor.fetchall()
         for request in res:
             hl7msg = create_HL7_msg(request)
+            print(hl7msg.replace('\r','\n'))
             s.send(hl7msg.encode('utf-8'))
         last_row = mycursor.lastrowid
 
@@ -198,7 +198,7 @@ s.connect((host,port))
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="rufito12",
+  passwd="",
   database="requests"
 )
 if mydb:

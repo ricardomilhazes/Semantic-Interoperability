@@ -41,7 +41,7 @@ print("Waiting for connections.")
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="rufito12",
+  passwd="",
   database="requests"
 )
 print("Connected to",str(mydb))

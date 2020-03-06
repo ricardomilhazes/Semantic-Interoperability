@@ -166,7 +166,7 @@ s.connect((host,port))
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="rufito12",
+  passwd="",
   database="exams"
 )
 if mydb:

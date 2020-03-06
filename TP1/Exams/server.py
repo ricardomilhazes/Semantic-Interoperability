@@ -21,7 +21,7 @@ def remove_from_wl(id):
 def update_db(idExam, status, date, medical_act, idUser, name, idProcess, address, mobile, notes, report):
     mycursor=mydb.cursor()
 
-    sql = "INSERT INTO User VALUES(%s,%s,%s,%s) ON DUPLICATE KEY UPDATE Name = %s, idProcess = %s, Address = %s, Mobile = %s"
+    sql = "INSERT INTO User (Name,idProcess,Address,Mobile) VALUES(%s,%s,%s,%s) ON DUPLICATE KEY UPDATE Name = %s, idProcess = %s, Address = %s, Mobile = %s"
     val = (name,idProcess,address,mobile,name,idProcess,address,mobile)
     mycursor.execute(sql,val)
 
@@ -43,7 +43,7 @@ print("Waiting for connections.")
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="rufito12",
+  passwd="",
   database="exams"
 )
 print("Connected to",str(mydb))
