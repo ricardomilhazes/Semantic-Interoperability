@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS `exams`.`Worklist` (
   `Address` VARCHAR(200) NULL,
   `Mobile` VARCHAR(13) NULL,
   `Notes` VARCHAR(45) NULL,
-  `Report` TINYBLOB NULL,
+  `Report` VARCHAR(1000) NULL,
   PRIMARY KEY (`idWorkList`))
 ENGINE = InnoDB;
 

@@ -3,14 +3,17 @@ import socket
 import threading
 from hl7apy import core
 from hl7apy.consts import VALIDATION_LEVEL
+from hl7apy.parser import parse_message, parse_field
 from dateutil.parser import parse
 import time
 
 def initial_menu():
-    option = input("What do you want to do? \n 1) Register new request\n 2) Consult requests\n 3) Consult report")
+    option = input("What do you want to do? \n 1) Register new request\n 2) Consult requests\n 3) Consult report \nOPTION: ")
     execute(option)
 
 def add_user(name,address,mobile,idProcess):
+    
+
     mycursor = mydb.cursor()
     
     sql = "INSERT INTO User (Name, Address, Mobile,idProcess) VALUES (%s, %s, %s,%s)"
@@ -18,6 +21,7 @@ def add_user(name,address,mobile,idProcess):
     mycursor.execute(sql, val)
 
     mydb.commit()
+    
     print("Record inserted. ID: ", mycursor.lastrowid)
 
     return True, mycursor.lastrowid
@@ -39,16 +43,21 @@ def register_user():
     initial_menu()
 
 def user_exists(user):
-    mycursor = mydb.cursor()
+    db = init_db()
+
+    mycursor = db.cursor()
 
     sql = "SELECT * FROM User WHERE idUser = %s"
     mycursor.execute(sql,(user,))
     res = mycursor.fetchone()
 
+    db.close()
+
     if res:
       return True
 
 def add_request_db(reqType, date, user, obs):
+    
 
     if not user_exists(user):
       print("User in not in our database, please insert new data: ")
@@ -65,6 +74,8 @@ def add_request_db(reqType, date, user, obs):
     mydb.commit()
     print("Record inserted. ID: ", mycursor.lastrowid)
 
+    
+
     return True
 
 def register_request():
@@ -78,7 +89,8 @@ def register_request():
     initial_menu()
 
 def consult_requests():
-    mycursor = mydb.cursor()
+    db = init_db()
+    mycursor = db.cursor()
 
     sql = "SELECT * FROM Request"
     mycursor.execute(sql)
@@ -87,18 +99,25 @@ def consult_requests():
     print("ID | State | Date")
     for request in res:
         print(request[0], "|", request[1], "|", request[2])
+
+    db.close()
     initial_menu()
 
 def consult_report():
+    
     request = input("Which request you wish do see report: ")
 
-    mycursor = mydb.cursor()
+    db = init_db()
+
+    mycursor = db.cursor()
 
     sql = "SELECT Report FROM Request WHERE idRequest = %s"
     mycursor.execute(sql,(request,))
     res = mycursor.fetchone()
 
     print("Report: ", res)
+    
+    db.close()
     initial_menu()
 
 def execute(option):
@@ -111,16 +130,6 @@ def execute(option):
     else:
         print("Wrong input. Please try again.\n")
         initial_menu()
-
-# get user from DB with the given ID
-def fetch_user(id):
-    mycursor = mydb.cursor()
-
-    sql = "SELECT * FROM User WHERE idUser = %s"
-    mycursor.execute(sql,(id,))
-    res = mycursor.fetchone()
-
-    return res
 
 # create msg with HL7 format
 def create_HL7_msg(request):
@@ -170,22 +179,48 @@ def create_HL7_msg(request):
     
 # THREAD FUNC: contiuously reading from Worklist table and sending new requests
 def worklist_listener():
-    last_row = 0
+    
     while True:
-        # read rows from worklist every 2 mins
+        # read rows from worklist every 5secs
         time.sleep(5)
         mycursor = mydb.cursor()
-        getNewRows = "SELECT * FROM Worklist WHERE idWorkList > %s"
-        mycursor.execute(getNewRows,(last_row,))
+        getNewRows = "SELECT * FROM Worklist"
+        mycursor.execute(getNewRows)
         res = mycursor.fetchall()
         for request in res:
             hl7msg = create_HL7_msg(request)
-            print(hl7msg.replace('\r','\n'))
+            hl7msg.replace('\r','\n')
             s.send(hl7msg.encode('utf-8'))
-        last_row = mycursor.lastrowid
+    
+
+
+def remove_from_wl(id):
+    mycursor=mydb.cursor()
+    sql="DELETE FROM Worklist WHERE idWorkList=%s"    
+    mycursor.execute(sql,(id,))
+    print("Request "+ str(id) +" removed from worklist")
+    mydb.commit()
+
+def ack_listener():
+    while True:
+        msgBytes = s.recv(1024)
+        message = msgBytes.decode('utf-8')
+        messageParsed = parse_message(message)
+        if messageParsed.msh.msh_9.value == "ACK":
+            id = messageParsed.msh.msh_10.value
+            remove_from_wl(id)
 
 
 # BEGIN SCRIPT
+
+def init_db():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="Hmpp1998",
+        database="requests"
+    )
+    return db
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # exams server host and port:
@@ -194,14 +229,17 @@ port = 9999
 s.connect((host,port))
 
 mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  passwd="",
-  database="requests"
+        host="localhost",
+        user="root",
+        passwd="Hmpp1998",
+        database="requests"
 )
-if mydb:
-    print(" Connected to " + str(mydb))
-    wlThread = threading.Thread(target=worklist_listener)
-    wlThread.start()
-    print("Welcome to the Requests UI!")
-    initial_menu()
+
+wlThread = threading.Thread(target=worklist_listener)
+wlThread.setDaemon(True)
+wlThread.start()
+ackThread = threading.Thread(target=ack_listener)
+ackThread.setDaemon(True)
+ackThread.start()
+print("Welcome to the Requests UI!")
+initial_menu()

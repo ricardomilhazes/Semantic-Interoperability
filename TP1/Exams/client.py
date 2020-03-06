@@ -5,21 +5,24 @@ import socket
 import threading
 from hl7apy import core
 from hl7apy.consts import VALIDATION_LEVEL
+from hl7apy.parser import parse_message, parse_field
 from dateutil.parser import parse
 import time
 
 
 def initial_menu():
-    option = input("What do you want to do? \n 1) Issue Report\n 2) Perform Exam\n 3) Consult Requests")
+    option = input("What do you want to do? \n 1) Issue Report\n 2) Perform Exam\n 3) Consult Requests\nOPTION: ")
     execute(option)
 
 def add_report(request,report):
+    
     mycursor = mydb.cursor()
 
     sql = "UPDATE Exam SET Report = %s, State = '2' WHERE idRequest = %s"
     mycursor.execute(sql,(report,request,))
 
     mydb.commit()
+    
     print("Report added. ID: ", mycursor.lastrowid)
 
     return True
@@ -35,25 +38,30 @@ def register_report():
     initial_menu()
 
 def consult_requests():
-  mycursor = mydb.cursor()
+    db = init_db()
+    mycursor = db.cursor()
 
-  sql = "SELECT * FROM Exam"
-  mycursor.execute(sql)
-  res = mycursor.fetchall()
+    sql = "SELECT * FROM Exam"
+    mycursor.execute(sql)
+    res = mycursor.fetchall()
 
-  print("ID | State | Date")
-  for request in res:
-    print(request[0], "|", request[1], "|", request[2])
-  initial_menu()
+    print("ID | State | Date")
+    for request in res:
+        print(request[0], "|", request[1], "|", request[2])
+    
+    db.close()
+    initial_menu()
 
 def change_request_state(request):
+    
     mycursor = mydb.cursor()
 
     sql = "UPDATE Exam SET State = '1' WHERE idRequest = %s"
     mycursor.execute(sql,(request,))
 
     mydb.commit()
-    print("Exam performed. ID: ", mycursor.lastrowid)
+    print("Exam performed with success.")
+    
 
     return True
 
@@ -112,39 +120,68 @@ def create_HL7_msg(request):
     hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.PV1.pv1_2 = "1"
 
     # ORC
-    if request[2] == '-1':
-        hl7.ORM_O01_ORDER.orc.orc_1 = '-1'
-    else:
-        hl7.ORM_O01_ORDER.orc.orc_1 = '0'
-        hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
-        hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
+
+    hl7.ORM_O01_ORDER.orc.orc_1 = request[2]
+    hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
+    hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
 
     # NTE
     hl7.nte.nte_3 = str(request[11])
     hl7.nte.nte_4 = str(request[4])
 
     assert hl7.validate() is True
-    print(str(hl7.value))
+    # print(str(hl7.value))
 
     return hl7.value
 
 # THREAD FUNC: contiuously reading from Worklist table and sending new requests
 def worklist_listener():
-    last_row = 0
+    
     while True:
-        # read rows from worklist every 2 mins
-        time.sleep(120)
+        # read rows from worklist every 5secs
+        time.sleep(5)
         mycursor = mydb.cursor()
-        getNewRows = "SELECT * FROM Worklist WHERE idWorkList > %s"
-        mycursor.execute(getNewRows,(last_row,))
+        getNewRows = "SELECT * FROM Worklist"
+        mycursor.execute(getNewRows)
         res = mycursor.fetchall()
         for request in res:
             #user = fetch_user(id)
             hl7msg = create_HL7_msg(request)
             s.send(hl7msg.encode('utf-8'))
-        last_row = mycursor.lastrowid
+    
+
+def remove_from_wl(id):
+    
+    mycursor=mydb.cursor()
+    sql="DELETE FROM Worklist WHERE idWorkList=%s"    
+    mycursor.execute(sql,(id,))
+    print("Request "+ str(id) +" removed from worklist")
+    mydb.commit()
+    
+
+def ack_listener():
+    while True:
+        msgBytes = s.recv(1024)
+        message = msgBytes.decode('utf-8')
+        try:
+            messageParsed = parse_message(message)
+            if messageParsed.msh.msh_9.value == "ACK":
+                id = int(messageParsed.msh.msh_10.value)
+                remove_from_wl(id)
+        except:
+            print("received:",message)
+
 
 #BEGIN SCRIPT
+
+def init_db():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="Hmpp1998",
+        database="exams"
+    )
+    return db
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 host = 'localhost'
@@ -152,14 +189,17 @@ port = 9090
 s.connect((host,port))
 
 mydb = mysql.connector.connect(
-  host="localhost",
-  user="root",
-  passwd="",
-  database="exams"
+        host="localhost",
+        user="root",
+        passwd="Hmpp1998",
+        database="exams"
 )
-if mydb:
-    print(" Connected to " + str(mydb))
-    wlThread = threading.Thread(target=worklist_listener)
-    wlThread.start()
-    print("Welcome to the Requests UI!")
-    initial_menu()
+
+wlThread = threading.Thread(target=worklist_listener)
+wlThread.setDaemon(True)
+wlThread.start()
+ackThread = threading.Thread(target=ack_listener)
+ackThread.setDaemon(True)
+ackThread.start()
+print("Welcome to the Requests UI!")
+initial_menu()

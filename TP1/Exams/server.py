@@ -11,13 +11,6 @@ from hl7apy.parser import parse_message, parse_field
 def get_id_from_msg():
     return 0
 
-def remove_from_wl(id):
-    mycursor=mydb.cursor()
-    sql="DELETE FROM Worklist WHERE idWorkList=%s"    
-    mycursor.execute(sql,(id,))
-    print("pedido "+ str(id) +" removido da worklist")
-    mydb.commit()
-
 def update_db(idExam, status, date, medical_act, idUser, name, idProcess, address, mobile, notes, report):
     mycursor=mydb.cursor()
 
@@ -31,6 +24,9 @@ def update_db(idExam, status, date, medical_act, idUser, name, idProcess, addres
 
     mydb.commit()
 
+    print("Updated user: ", idUser)
+    print("Updated exam: ", idExam)
+
 
 # BEGIN SCRIPT
 
@@ -43,45 +39,54 @@ print("Waiting for connections.")
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="",
+  passwd="Hmpp1998",
   database="exams"
 )
 print("Connected to",str(mydb))
 
-while True:
-    c, addr = serversocket.accept()
-    print("New connection from",addr)
-    msgBytes = c.recv(1024)
-    message = msgBytes.decode('utf-8')
-    messageParsed = parse_message(message)
-    if parse_field(message,"MSH_9").to_er7() == "ACK":
-        id = messageParsed.msh.msh_10.value
-        remove_from_wl(id)
-    else:
-        id = messageParsed.ORM_O01_ORDER.ORC.orc_2.value
-        status = messageParsed.ORM_O01_ORDER.orc.orc_1.value
-        date = messageParsed.ORM_O01_ORDER.ORC.orc_10.value
-        medical_act = messageParsed.nte.nte_4.value
-        idUser = messageParsed.ORM_O01_PATIENT.pid.pid_2.value
-        name = messageParsed.ORM_O01_PATIENT.pid.pid_3.value
-        idProcess = messageParsed.ORM_O01_PATIENT.pid.pid_5.value
-        address = messageParsed.ORM_O01_PATIENT.pid.pid_11.value
-        mobile = messageParsed.ORM_O01_PATIENT.pid.pid_13.value
-        notes = messageParsed.ORM_O01_PATIENT.nte.nte_3.value
-        report = messageParsed.nte.nte_3.value
+try:
+    while True:
+        c, addr = serversocket.accept()
+        print("New connection from",addr)
+        while True:
+            msgBytes = c.recv(1024)
+            if not msgBytes:
+                break
+            else:
+                message = msgBytes.decode('utf-8')
+                messageParsed = parse_message(message)
 
-        # update database
-        update_db(id,status,date,medical_act,idUser,name,idProcess,address,mobile,notes,report)
+                id = messageParsed.ORM_O01_ORDER.ORC.orc_2.value
+                status = messageParsed.ORM_O01_ORDER.orc.orc_1.value
+                date = messageParsed.ORM_O01_ORDER.ORC.orc_10.value
+                medical_act = messageParsed.nte.nte_4.value
+                idUser = messageParsed.ORM_O01_PATIENT.pid.pid_2.value
+                name = messageParsed.ORM_O01_PATIENT.pid.pid_3.value
+                idProcess = messageParsed.ORM_O01_PATIENT.pid.pid_5.value
+                address = messageParsed.ORM_O01_PATIENT.pid.pid_11.value
+                mobile = messageParsed.ORM_O01_PATIENT.pid.pid_13.value
+                notes = messageParsed.ORM_O01_PATIENT.nte.nte_3.value
+                report = messageParsed.nte.nte_3.value
+                worklist = messageParsed.msh.msh_10.value
 
-        # send ack
-        hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
-        hl7.msh.msh_3 = "PedidosServer"
-        hl7.msh.msh_4 = "PedidosServer"
-        hl7.msh.msh_5 = "ExamesServer"
-        hl7.msh.msh_6 = "ExamesServer"
-        hl7.msh.msh_10 = str(id)
-        hl7.msh.msh_9 = "ACK"
-        hl7.msh.msh_11 = "P"
-        hl7.msa.msa_2 = str(id)
-        hl7.msa.msa_1 = "AA"
-        c.send(hl7.value.encode('utf-8'))
+                # update database
+                update_db(id,status,date,medical_act,idUser,name,idProcess,address,mobile,notes,report)
+
+                # send ack
+                hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
+                hl7.msh.msh_3 = "PedidosServer"
+                hl7.msh.msh_4 = "PedidosServer"
+                hl7.msh.msh_5 = "ExamesServer"
+                hl7.msh.msh_6 = "ExamesServer"
+                hl7.msh.msh_10 = worklist
+                hl7.msh.msh_9 = "ACK"
+                hl7.msh.msh_11 = "P"
+                hl7.msa.msa_2 = str(id)
+                hl7.msa.msa_1 = "AA"
+
+                c.send(hl7.value.encode('utf-8'))
+        c.close()
+
+except KeyboardInterrupt:
+    serversocket.shutdown(socket.SHUT_RDWR)
+    serversocket.close()
