@@ -24,8 +24,8 @@ def update_db(idExam, status, date, medical_act, idUser, name, idProcess, addres
 
     mydb.commit()
 
-    print("Updated user: ", idUser)
-    print("Updated exam: ", idExam)
+    print("Updated user: ", idUser, "\n")
+    print("Updated exam: ", idExam, "\n")
 
 
 # BEGIN SCRIPT
@@ -39,7 +39,7 @@ print("Waiting for connections.")
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="Hmpp1998",
+  passwd="",
   database="exams"
 )
 print("Connected to",str(mydb))
@@ -47,7 +47,7 @@ print("Connected to",str(mydb))
 try:
     while True:
         c, addr = serversocket.accept()
-        print("New connection from",addr)
+        print("New connection from",addr,"\n")
         while True:
             msgBytes = c.recv(1024)
             if not msgBytes:
@@ -56,17 +56,19 @@ try:
                 message = msgBytes.decode('utf-8')
                 messageParsed = parse_message(message)
 
+                print(messageParsed.value.replace('\r','\n'))
+
                 id = messageParsed.ORM_O01_ORDER.ORC.orc_2.value
                 status = messageParsed.ORM_O01_ORDER.orc.orc_1.value
-                date = messageParsed.ORM_O01_ORDER.ORC.orc_10.value
-                medical_act = messageParsed.nte.nte_4.value
-                idUser = messageParsed.ORM_O01_PATIENT.pid.pid_2.value
-                name = messageParsed.ORM_O01_PATIENT.pid.pid_3.value
-                idProcess = messageParsed.ORM_O01_PATIENT.pid.pid_5.value
+                date = messageParsed.ORM_O01_ORDER.orc.orc_10.value
+                medical_act = messageParsed.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_OBSERVATION.obx.obx_17.value
+                idUser = messageParsed.ORM_O01_PATIENT.pid.pid_3.value
+                name = messageParsed.ORM_O01_PATIENT.pid.pid_5.value
+                idProcess = messageParsed.ORM_O01_PATIENT.pid.pid_18.value
                 address = messageParsed.ORM_O01_PATIENT.pid.pid_11.value
                 mobile = messageParsed.ORM_O01_PATIENT.pid.pid_13.value
-                notes = messageParsed.ORM_O01_PATIENT.nte.nte_3.value
-                report = messageParsed.nte.nte_3.value
+                notes = messageParsed.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_OBSERVATION.nte.nte_3.value
+                report = messageParsed.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_OBSERVATION.obx.obx_5.value
                 worklist = messageParsed.msh.msh_10.value
 
                 # update database
@@ -74,10 +76,10 @@ try:
 
                 # send ack
                 hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
-                hl7.msh.msh_3 = "PedidosServer"
-                hl7.msh.msh_4 = "PedidosServer"
-                hl7.msh.msh_5 = "ExamesServer"
-                hl7.msh.msh_6 = "ExamesServer"
+                hl7.msh.msh_3 = "ExamsServer"
+                hl7.msh.msh_4 = "ExamsServer"
+                hl7.msh.msh_5 = "RequestsClient"
+                hl7.msh.msh_6 = "RequestClient"
                 hl7.msh.msh_10 = worklist
                 hl7.msh.msh_9 = "ACK"
                 hl7.msh.msh_11 = "P"

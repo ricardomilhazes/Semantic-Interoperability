@@ -23,7 +23,7 @@ def add_report(request,report):
 
     mydb.commit()
     
-    print("Report added. ID: ", mycursor.lastrowid)
+    print("Report added. ID: ", mycursor.lastrowid,"\n")
 
     return True
 
@@ -32,7 +32,7 @@ def register_report():
     report = input("Write your report: ")
 
     if add_report(request,report):
-        print("Report added with success.")
+        print("Report added with success. \n")
     else:
         print("An error ocurred, please try again.")
     initial_menu()
@@ -60,7 +60,7 @@ def change_request_state(request):
     mycursor.execute(sql,(request,))
 
     mydb.commit()
-    print("Exam performed with success.")
+    print("Exam performed with success. \n")
     
 
     return True
@@ -69,7 +69,7 @@ def perform_exam():
     request = input("Which request you wish to perform an exam on: ")
 
     if change_request_state(request):
-        print("Exam performed with success")
+        print("Exam performed with success \n")
     else:
         print("An error ocurred, please try again.")
     initial_menu()
@@ -93,41 +93,40 @@ def execute(option):
 def create_HL7_msg(request):
     
     # Create Message
-    hl7 = core.Message("ORM_O01", validation_level=VALIDATION_LEVEL.STRICT)
+    hl7 = core.Message("ORU_R01", validation_level=VALIDATION_LEVEL.STRICT)
 
     # Message Header
-    hl7.msh.msh_3 = "PedidosClient"
-    hl7.msh.msh_4 = "PedidosClient"
-    hl7.msh.msh_5 = "ExamesServer"
-    hl7.msh.msh_6 = "ExamesServer"
-    hl7.msh.msh_9 = "ORM^O01^ORM_O01"
+    hl7.msh.msh_3 = "ExamsClient"
+    hl7.msh.msh_4 = "ExamsClient"
+    hl7.msh.msh_5 = "RequestsServer"
+    hl7.msh.msh_6 = "RequestsServer"
+    hl7.msh.msh_9 = "ORU^R01^ORU_R01"
     hl7.msh.msh_10 = str(request[0])
     hl7.msh.msh_11 = "P"
 
     # PID
-    hl7.add_group("ORM_O01_PATIENT")
-    hl7.ORM_O01_PATIENT.pid.pid_2 = str(request[5])
-    hl7.ORM_O01_PATIENT.pid.pid_3 = str(request[6])
-    hl7.ORM_O01_PATIENT.pid.pid_5 = str(request[7])
-    hl7.ORM_O01_PATIENT.pid.pid_11 = str(request[8])
-    hl7.ORM_O01_PATIENT.pid.pid_13 = str(request[9])
-    hl7.ORM_O01_PATIENT.nte.nte_3 = str(request[10])
-
-    # PV1
-    hl7.ORM_O01_PATIENT.add_group("ORM_O01_PATIENT_VISIT")
-    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.add_segment("PV1")
-    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.PV1.pv1_1 = "1"
-    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.PV1.pv1_2 = "1"
+    hl7.add_group("ORU_R01_PATIENT_RESULT")
+    hl7.ORU_R01_PATIENT_RESULT.add_group("ORU_R01_PATIENT")
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_PATIENT.pid.pid_3 = str(request[5])
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_PATIENT.pid.pid_5 = str(request[6])
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_PATIENT.pid.pid_18 = str(request[7])
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_PATIENT.pid.pid_11 = str(request[8])
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_PATIENT.pid.pid_13 = str(request[9])
 
     # ORC
+    hl7.ORU_R01_PATIENT_RESULT.add_group("ORU_R01_ORDER_OBSERVATION")
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.orc.orc_10 = request[3].strftime("%Y-%m-%d")
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.orc.orc_1 = str(request[1])
 
-    hl7.ORM_O01_ORDER.orc.orc_1 = request[2]
-    hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
-    hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
+    # OBR
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.obr.obr_4 = str(request[4])
 
-    # NTE
-    hl7.nte.nte_3 = str(request[11])
-    hl7.nte.nte_4 = str(request[4])
+    # OBX
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.add_group("ORU_R01_OBSERVATION")
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.ORU_R01_OBSERVATION.obx.obx_5 = str(request[11])
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.ORU_R01_OBSERVATION.obx.obx_11 = str(request[2]) 
+    hl7.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.ORU_R01_OBSERVATION.obx.obx_3 = str(request[10])
+
 
     assert hl7.validate() is True
     # print(str(hl7.value))
@@ -155,7 +154,7 @@ def remove_from_wl(id):
     mycursor=mydb.cursor()
     sql="DELETE FROM Worklist WHERE idWorkList=%s"    
     mycursor.execute(sql,(id,))
-    print("Request "+ str(id) +" removed from worklist")
+    print("Request "+ str(id) +" removed from worklist\n")
     mydb.commit()
     
 
@@ -165,11 +164,13 @@ def ack_listener():
         message = msgBytes.decode('utf-8')
         try:
             messageParsed = parse_message(message)
+            print("\nACK RECEIVED")
+            print(messageParsed.value.replace('\r','\n'))
             if messageParsed.msh.msh_9.value == "ACK":
                 id = int(messageParsed.msh.msh_10.value)
                 remove_from_wl(id)
         except:
-            print("received:",message)
+            print("\nreceived:",message)
 
 
 #BEGIN SCRIPT
@@ -178,7 +179,7 @@ def init_db():
     db = mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Hmpp1998",
+        passwd="",
         database="exams"
     )
     return db
@@ -191,7 +192,7 @@ s.connect((host,port))
 mydb = mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Hmpp1998",
+        passwd="",
         database="exams"
 )
 

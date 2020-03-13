@@ -17,7 +17,7 @@ def update_db(id, status, report):
     mycursor.execute(sql,val)
 
     mydb.commit()
-    print("Updated request: ", id)
+    print("Updated request: ", id,"\n")
 
 
 # BEGIN SCRIPT
@@ -32,7 +32,7 @@ print("Waiting for connections.")
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="Hmpp1998",
+  passwd="",
   database="requests"
 )
 print("Connected to",str(mydb))
@@ -49,18 +49,21 @@ try:
                 message = msgBytes.decode('utf-8')
                 messageParsed = parse_message(message)
 
-                id = messageParsed.ORM_O01_ORDER.ORC.orc_2.value
-                worklist = messageParsed.msh.msh_10.value
-                status = messageParsed.ORM_O01_ORDER.orc.orc_1.value
-                report = messageParsed.nte.nte_3.value
+                print(messageParsed.value.replace('\r','\n'))
 
+                id = messageParsed.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.orc.orc_1.value
+                worklist = messageParsed.msh.msh_10.value
+                status = messageParsed.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.ORU_R01_OBSERVATION.obx.obx_11.value
+                report = messageParsed.ORU_R01_PATIENT_RESULT.ORU_R01_ORDER_OBSERVATION.ORU_R01_OBSERVATION.obx.obx_5.value
+
+                print(str(status))
                 update_db(id,status,report)
                     
                 hl7 = core.Message("ACK", validation_level=VALIDATION_LEVEL.STRICT)
-                hl7.msh.msh_3 = "PedidosServer"
-                hl7.msh.msh_4 = "PedidosServer"
-                hl7.msh.msh_5 = "ExamesServer"
-                hl7.msh.msh_6 = "ExamesServer"
+                hl7.msh.msh_3 = "RequestsServer"
+                hl7.msh.msh_4 = "RequestsServer"
+                hl7.msh.msh_5 = "ExamsClient"
+                hl7.msh.msh_6 = "ExamsClient"
                 hl7.msh.msh_10 = worklist
                 hl7.msh.msh_9 = "ACK"
                 hl7.msh.msh_11 = "P"

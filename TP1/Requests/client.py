@@ -138,41 +138,32 @@ def create_HL7_msg(request):
     hl7 = core.Message("ORM_O01", validation_level=VALIDATION_LEVEL.STRICT)
 
     # Message Header
-    hl7.msh.msh_3 = "PedidosClient"
-    hl7.msh.msh_4 = "PedidosClient"
-    hl7.msh.msh_5 = "ExamesServer"
-    hl7.msh.msh_6 = "ExamesServer"
+    hl7.msh.msh_3 = "RequestClient"
+    hl7.msh.msh_4 = "RequestClient"
+    hl7.msh.msh_5 = "ExamsServer"
+    hl7.msh.msh_6 = "ExamsServer"
     hl7.msh.msh_9 = "ORM^O01^ORM_O01"
     hl7.msh.msh_10 = str(request[0])
     hl7.msh.msh_11 = "P"
 
     # PID
     hl7.add_group("ORM_O01_PATIENT")
-    hl7.ORM_O01_PATIENT.pid.pid_2 = str(request[5])
-    hl7.ORM_O01_PATIENT.pid.pid_3 = str(request[6])
-    hl7.ORM_O01_PATIENT.pid.pid_5 = str(request[7])
+    hl7.ORM_O01_PATIENT.pid.pid_3 = str(request[5])
+    hl7.ORM_O01_PATIENT.pid.pid_5 = str(request[6])
+    hl7.ORM_O01_PATIENT.pid.pid_18 = str(request[7])
     hl7.ORM_O01_PATIENT.pid.pid_11 = str(request[8])
     hl7.ORM_O01_PATIENT.pid.pid_13 = str(request[9])
-    hl7.ORM_O01_PATIENT.nte.nte_3 = str(request[10])
-
-    # PV1
-    hl7.ORM_O01_PATIENT.add_group("ORM_O01_PATIENT_VISIT")
-    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.add_segment("PV1")
-    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.PV1.pv1_1 = "1"
-    hl7.ORM_O01_PATIENT.ORM_O01_PATIENT_VISIT.PV1.pv1_2 = "1"
 
     # ORC
-    if request[2] == '-1':
-        hl7.ORM_O01_ORDER.orc.orc_1 = '-1'
-    else:
-        hl7.ORM_O01_ORDER.orc.orc_1 = '0'
-        hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
-        hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
-
-    # NTE
-    hl7.nte.nte_3 = str(request[11])
-    hl7.nte.nte_4 = str(request[4])
-
+    hl7.ORM_O01_ORDER.orc.orc_1 = request[2]
+    hl7.ORM_O01_ORDER.ORC.orc_10 = request[3].strftime("%Y-%m-%d")
+    hl7.ORM_O01_ORDER.ORC.orc_2 = str(request[1])
+    
+    # OBX AND NTE
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.add_group("ORM_O01_OBSERVATION")
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_OBSERVATION.obx.obx_5 = str(request[11])
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_OBSERVATION.obx.obx_17 = str(request[4])
+    hl7.ORM_O01_ORDER.ORM_O01_ORDER_DETAIL.ORM_O01_OBSERVATION.nte.nte_3 = str(request[10])
     assert hl7.validate() is True
 
     return hl7.value
@@ -206,6 +197,8 @@ def ack_listener():
         msgBytes = s.recv(1024)
         message = msgBytes.decode('utf-8')
         messageParsed = parse_message(message)
+        print("\nACK RECEIVED")
+        print(messageParsed.value.replace('\r','\n'))
         if messageParsed.msh.msh_9.value == "ACK":
             id = messageParsed.msh.msh_10.value
             remove_from_wl(id)
@@ -217,7 +210,7 @@ def init_db():
     db = mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Hmpp1998",
+        passwd="",
         database="requests"
     )
     return db
@@ -231,7 +224,7 @@ s.connect((host,port))
 mydb = mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Hmpp1998",
+        passwd="",
         database="requests"
 )
 
