@@ -11,7 +11,7 @@ import time
 
 
 def initial_menu():
-    option = input("What do you want to do? \n 1) Issue Report\n 2) Perform Exam\n 3) Consult Requests\nOPTION: ")
+    option = input("What do you want to do? \n 1) Issue Report\n 2) Perform Exam\n 3) Consult Requests\n 4) Cancel Exam\n OPTION: ")
     execute(option)
 
 def add_report(request,report):
@@ -52,24 +52,31 @@ def consult_requests():
     db.close()
     initial_menu()
 
-def change_request_state(request):
+def change_request_state(request,state):
     
     mycursor = mydb.cursor()
 
-    sql = "UPDATE Exam SET State = '1' WHERE idRequest = %s"
-    mycursor.execute(sql,(request,))
+    sql = "UPDATE Exam SET State = %s WHERE idRequest = %s"
+    mycursor.execute(sql,(state, request))
 
-    mydb.commit()
-    print("Exam performed with success.")
-    
+    mydb.commit()    
 
     return True
 
 def perform_exam():
     request = input("Which request you wish to perform an exam on: ")
 
-    if change_request_state(request):
+    if change_request_state(request, 1):
         print("Exam performed with success")
+    else:
+        print("An error ocurred, please try again.")
+    initial_menu()
+
+def cancel_exam():
+    request = input("Which exam you wish to cancel: ")
+
+    if change_request_state(request, 3):
+        print("Exam canceled with success")
     else:
         print("An error ocurred, please try again.")
     initial_menu()
@@ -81,6 +88,8 @@ def execute(option):
         perform_exam()
     elif option == "3":
         consult_requests()
+    elif option == "4":
+        cancel_exam()
     else:
         print("Wrong input. Please try again.\n")
         initial_menu()
@@ -165,6 +174,9 @@ def ack_listener():
         message = msgBytes.decode('utf-8')
         try:
             messageParsed = parse_message(message)
+            print("\nACK RECEIVED")
+            print(messageParsed.value.replace('\r','\n'))
+
             if messageParsed.msh.msh_9.value == "ACK":
                 id = int(messageParsed.msh.msh_10.value)
                 remove_from_wl(id)
@@ -191,7 +203,7 @@ s.connect((host,port))
 mydb = mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Hmpp1998",
+        passwd="",
         database="exams"
 )
 

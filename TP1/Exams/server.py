@@ -39,7 +39,7 @@ print("Waiting for connections.")
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="Hmpp1998",
+  passwd="",
   database="exams"
 )
 print("Connected to",str(mydb))
@@ -55,6 +55,8 @@ try:
             else:
                 message = msgBytes.decode('utf-8')
                 messageParsed = parse_message(message)
+
+                print(messageParsed.value.replace('\r','\n'))
 
                 id = messageParsed.ORM_O01_ORDER.ORC.orc_2.value
                 status = messageParsed.ORM_O01_ORDER.orc.orc_1.value

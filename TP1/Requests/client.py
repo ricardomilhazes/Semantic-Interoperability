@@ -217,7 +217,7 @@ def init_db():
     db = mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Hmpp1998",
+        passwd="",
         database="requests"
     )
     return db
@@ -231,7 +231,7 @@ s.connect((host,port))
 mydb = mysql.connector.connect(
         host="localhost",
         user="root",
-        passwd="Hmpp1998",
+        passwd="",
         database="requests"
 )
 

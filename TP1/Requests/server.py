@@ -32,7 +32,7 @@ print("Waiting for connections.")
 mydb = mysql.connector.connect(
   host="localhost",
   user="root",
-  passwd="Hmpp1998",
+  passwd="",
   database="requests"
 )
 print("Connected to",str(mydb))
