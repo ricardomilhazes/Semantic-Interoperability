@@ -81,13 +81,38 @@ def update_db(id, received):
     db = init_db()
     cursor = db.cursor()
 
-    print("RECEIVED:", received)
-
     sql = "UPDATE MessageHL7 SET ReceivedAck = %s WHERE idMessageHL7 = %s"
     val = (received, id)
     cursor.execute(sql, val)
 
     db.commit()
+
+
+def update_db_sent(id, sent):
+    db = init_db()
+    cursor = db.cursor()
+
+    sql = "UPDATE MessageHL7 SET Sent = %s WHERE idMessageHL7 = %s"
+    val = (sent, id)
+    cursor.execute(sql, val)
+
+    db.commit()
+
+
+def check_acks_not_gotten(id):
+    db = init_db()
+    cursor = db.cursor()
+
+    sql = "SELECT * FROM MessageHL7 WHERE ElapsedTime IS NULL"
+    cursor.execute(sql)
+
+    print(cursor.rowcount)
+
+    if cursor.rowcount > 0:
+        for row in cursor.fetchall():
+            s.send(row[1].encode('utf-8'))
+            sent = time.time()
+            update_db_sent(row[0], sent)
 
 
 def ack_listener():
@@ -135,6 +160,9 @@ for i in range(0, num):
     print("SENT:", sent)
 
     insert_db(i, msg, creation_time, sent)
+
+    if i == num-1:
+        check_acks_not_gotten(id)
 
 while acks_gotten < num:
     pass
