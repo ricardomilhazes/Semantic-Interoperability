@@ -28,6 +28,21 @@ CREATE TABLE IF NOT EXISTS `requests`.`MessageHL7` (
 ENGINE = InnoDB;
 
 
+-- -----------------------------------------------------
+-- Table `requests`.`Worklist`
+-- -----------------------------------------------------
+CREATE TABLE IF NOT EXISTS `requests`.`Worklist` (
+  `idWorklist` INT NOT NULL,
+  `Message` TEXT NULL,
+  PRIMARY KEY (`idWorklist`))
+ENGINE = InnoDB;
+
+
 SET SQL_MODE=@OLD_SQL_MODE;
 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS;
 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS;
+
+CREATE TRIGGER move_to_wl
+AFTER INSERT ON MessageHL7
+FOR EACH ROW
+INSERT INTO Worklist VALUES(new.idMessageHL7,new.Message)

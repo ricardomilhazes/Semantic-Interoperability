@@ -8,6 +8,8 @@ from dateutil.parser import parse
 import time
 import random
 import string
+import numpy as np
+import os
 
 global acks_gotten
 acks_gotten = 0
@@ -66,18 +68,21 @@ def create_HL7_msg(id):
     return hl7.value
 
 
-def insert_db(id, msg, creation_time, sent_date):
+def insert_db(id, msg, creation_time):
     db = init_db()
     cursor = db.cursor()
 
-    sql = "INSERT INTO MessageHL7 (idMessageHL7, Message, CreationTime, Sent, ReceivedAck) VALUES (%s, %s, %s, %s, NULL)"
-    val = (id, msg, creation_time, sent_date)
+    sql = "INSERT INTO MessageHL7 (idMessageHL7, Message, CreationTime, Sent, ReceivedAck) VALUES (%s, %s, %s, NULL, NULL)"
+    val = (id, msg, creation_time)
     cursor.execute(sql, val)
 
     db.commit()
 
+    cursor.close()
+    db.close()
 
-def update_db(id, received):
+
+def update_db_received(id, received):
     db = init_db()
     cursor = db.cursor()
 
@@ -86,6 +91,9 @@ def update_db(id, received):
     cursor.execute(sql, val)
 
     db.commit()
+
+    cursor.close()
+    db.close()
 
 
 def update_db_sent(id, sent):
@@ -98,21 +106,51 @@ def update_db_sent(id, sent):
 
     db.commit()
 
+    cursor.close()
+    db.close()
 
-def check_acks_not_gotten(id):
+
+def worklist_listener():
+    global num
+    global acks_gotten
+    global sec
+    global queue_sizes
+
+    while acks_gotten < num:
+        # read rows from worklist every 5secs
+        time.sleep(sec)
+        db = init_db()
+        cursor = db.cursor()
+
+        getNewRows = "SELECT * FROM Worklist"
+        cursor.execute(getNewRows)
+
+        res = cursor.fetchall()
+
+        size = cursor.rowcount
+
+        if size > -1:
+            queue_sizes.append(size)
+
+        for request in res:
+            s.send(request[1].encode('utf-8'))
+            sent = time.time()
+            print(request[0], "- SENT")
+            update_db_sent(request[0], sent)
+
+        cursor.close()
+        db.close()
+
+
+def remove_from_wl(id):
     db = init_db()
     cursor = db.cursor()
-
-    sql = "SELECT * FROM MessageHL7 WHERE ElapsedTime IS NULL"
-    cursor.execute(sql)
-
-    print(cursor.rowcount)
-
-    if cursor.rowcount > 0:
-        for row in cursor.fetchall():
-            s.send(row[1].encode('utf-8'))
-            sent = time.time()
-            update_db_sent(row[0], sent)
+    sql = "DELETE FROM Worklist WHERE idWorklist=%s"
+    cursor.execute(sql, (id,))
+    print(id, "- REMOVED FROM WL")
+    db.commit()
+    cursor.close()
+    db.close()
 
 
 def ack_listener():
@@ -127,12 +165,28 @@ def ack_listener():
             id = messageParsed.msh.msh_10.value
             print(id, "- Received ACK")
             received = time.time()
-            update_db(id, received)
+            update_db_received(id, received)
+            remove_from_wl(id)
 
             acks_gotten += 1
 
 
+def get_queue_stats(queue_sizes):
+    print("\n\nWaiting Queue (every", sec, "seconds):")
+    mu = np.mean(queue_sizes)
+    median = np.median(queue_sizes)
+    sigma = np.std(queue_sizes)
+    max_val = np.amax(queue_sizes)
+    min_val = np.amin(queue_sizes)
+    print("MEAN:", mu)
+    print("MEDIAN:", median)
+    print("STD DEV:", sigma)
+    print("MAX:", max_val)
+    print("MIN:", min_val)
+
+
 # BEGIN SCRIPT
+
 
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 # exams server host and port:
@@ -142,7 +196,16 @@ s.connect((host, port))
 
 global num
 num = int(input("How many HL7 messages you want to send?\n"))
+# num = 100
+global sec
+sec = int(input("Worklist reading interval (in seconds)?\n"))
+# sec = 3
 
+global queue_sizes
+queue_sizes = []
+
+wlThread = threading.Thread(target=worklist_listener)
+wlThread.start()
 ackThread = threading.Thread(target=ack_listener)
 ackThread.start()
 
@@ -151,21 +214,20 @@ for i in range(0, num):
     creation_start = time.time()
     msg = create_HL7_msg(i)
     creation_time = time.time() - creation_start
-    print(i, "- Creation time:", creation_time)
+    # print(i, "- Creation time:", creation_time)
 
-    print(msg)
+    # print(msg)
 
-    s.send(msg.encode('utf-8'))
-    sent = time.time()
-    print("SENT:", sent)
+    insert_db(i, msg, creation_time)
+    print(i, "- CREATED")
 
-    insert_db(i, msg, creation_time, sent)
-
-    if i == num-1:
-        check_acks_not_gotten(id)
 
 while acks_gotten < num:
     pass
 
 print("Finished successfully.")
+
+# Get queue size stats
+get_queue_stats(queue_sizes)
+
 s.close()

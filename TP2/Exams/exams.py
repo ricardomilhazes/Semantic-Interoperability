@@ -19,7 +19,7 @@ def insert_db(id, msg):
     db = init_db()
     cursor = db.cursor()
 
-    sql = "INSERT INTO MessageHL7 (idMessageHL7, Message) VALUES (%s, %s)"
+    sql = "INSERT IGNORE INTO MessageHL7 (idMessageHL7, Message) VALUES (%s, %s)"
     val = (id, msg)
 
     cursor.execute(sql, val)
