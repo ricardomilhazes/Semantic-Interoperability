@@ -1,0 +1,2 @@
+FLASK_APP=orcid_scopus.py
+FLASK_DEBUG=true
