@@ -1,11 +1,12 @@
 from app import app
+from flask import render_template, request
 
 @app.route('/')
 def index():
-    return "Hello, World!"
+    return render_template('index.html')
 
-@app.route('/tiago')
-def tigas():
-    return """
-    <h1>Relatable!</h1>
-    """
+@app.route('/profile', methods = ['POST', 'GET'])
+def get_profile():
+    if request.method == 'POST':
+        result = request.form
+        return render_template('profile.html', ORCID_ID=result['ORCID_ID'])
