@@ -1,6 +1,8 @@
 <!doctype html>
 <html>
    <head>
+      <meta charset="UTF-8">
+      <title>Orcid+Scopus - Home</title>
       <link rel="stylesheet" href="{{ url_for('static', filename='css/search.css') }}">
    </head>
    <body>
@@ -12,9 +14,9 @@
       </div>
    
       <div id="cover">
-         <form action="{{ url_for('get_profile') }}" method="post">
+         <form action="{{ url_for('index') }}" method="post">
            <div class="tb">
-             <div class="td"><input type="text" name="ORCID_ID" placeholder="Search" required></div>
+             <div class="td"><input type="text" name="ids" placeholder="Search" required></div>
              <div class="td" id="s-cover">
                <button type="submit">
                  <div id="s-circle"></div>

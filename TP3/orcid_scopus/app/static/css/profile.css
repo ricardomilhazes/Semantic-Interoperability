@@ -1,0 +1,40 @@
+
+h1 {
+    margin-left: 3vw;
+    margin-bottom: 2vh !important;
+}
+
+ul {
+    margin-left: 5vw;
+    margin-bottom: 2vh !important;
+}
+
+h3 {
+    margin-left: 3vw;
+    margin-bottom: 1vh !important;
+}
+
+#images
+{
+	margin: auto;
+	text-align: center;
+	background: white;
+    height: 20vh;
+    display: table;
+}
+
+#images img {
+    width: 25vw;
+    vertical-align: unset;
+}
+
+#plus {
+	width: 5vw !important;
+	margin-right: 2vw;
+    margin-left: 2vw;
+    margin-bottom: 2vh;
+}
+
+.card {
+    margin-bottom: 2vh !important;
+}

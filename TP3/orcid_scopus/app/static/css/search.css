@@ -12,7 +12,7 @@ html, body
 body
 {
     margin: 0;
-    background-color: #98FB98 !important;
+    background-color: palegreen !important;
 }
 
 .tb
@@ -46,9 +46,9 @@ input, button, h3
     width: 550px;
     padding: 35px;
     margin: -83px auto 0 auto;
-    background-color: #32CD32;
+    background-color: green;
     border-radius: 20px;
-    box-shadow: 0 10px 40px rgb(44, 184, 44), 0 0 0 20px #ffffffeb;
+    box-shadow: 0 10px 40px green, 0 0 0 20px #ffffffeb;
     transform: scale(0.6);
 }
 
