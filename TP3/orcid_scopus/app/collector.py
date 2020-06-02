@@ -1,7 +1,7 @@
 import requests
 import json
 import textwrap
-import config
+from app.config import SCOPUS_API_KEY
 from datetime import datetime
 
 def s(texto_):
@@ -13,7 +13,10 @@ def get_scopus_info(SCOPUS_ID):
           + "?field=authors,title,publicationName,volume,issueIdentifier,"
           + "prism:pageRange,coverDate,article-number,doi,citedby-count,prism:aggregationType")
     
-    resp = requests.get(url,headers={'Accept':'application/json','X-ELS-APIKey': config.SCOPUS_API_KEY})
+    resp = requests.get(url,headers={'Accept':'application/json','X-ELS-APIKey': SCOPUS_API_KEY})
+
+    if resp.status_code > 400:
+        return '', '', '', ''
 
     results = json.loads(resp.text.encode('utf-8'))
 
@@ -30,12 +33,14 @@ def get_scopus_info(SCOPUS_ID):
 def get_orcid_ids(ORCID_ID_):
     resp = requests.get("https://pub.orcid.org/v3.0/"+ORCID_ID_+"/works",
                     headers={'Accept':'application/json'})
+
+    if resp.status_code > 400:
+        return None
     
     results = resp.json()
     my_list = []
 
     investigator_document = {
-        'id' : '',
         'orcid_id' : ORCID_ID_,
         'last_updated' : datetime.now().strftime("%d/%m/%Y, %H:%M:%S"),
     }
@@ -72,7 +77,9 @@ def get_orcid_ids(ORCID_ID_):
 
     my_list2 = []
     
+    print("mylist:",len(my_list))
     for r in my_list:
+        print("r:",r)
         info["scopus"]["type"] = type_
         if r.find('eid=') > 0:
             k1 = r.find('eid=')
@@ -93,4 +100,4 @@ def get_orcid_ids(ORCID_ID_):
     print(investigator_document)
     return investigator_document
 
-get_orcid_ids('0000-0003-4121-6169')
+# get_orcid_ids('0000-0003-4121-6169')
