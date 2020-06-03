@@ -2,7 +2,7 @@
 
 # investigator document:
 # {
-#   id,
+#   _id,
 #   orcid_id,
 #   last_updated,
 #   name,
@@ -11,17 +11,15 @@
 #           title,
 #           year,
 #           local,
+#           type
 #           scopus: {
 #               eid,
-#               type (null),
 #               authors,
 #               num_quotes,
-#               num_quotes_last_three_years,
 #               sjr 
 #           }
 #           webofscience: {
 #               wos,
-#               type (null)
 #           }
 #       }
 #   ]

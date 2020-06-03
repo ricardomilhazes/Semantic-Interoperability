@@ -1,7 +1,7 @@
 from app import app
 from flask import render_template, request, redirect, url_for
 from app.models import get_profile, insert_profile
-from app.collector import get_orcid_ids
+from app.collector import get_infos
 
 @app.route('/', methods = ['POST', 'GET'])
 def index():
@@ -23,7 +23,7 @@ def search(ids):
         if profile is None:
             # fazer pedido à API
             print("não tenho na BD, vou buscar à API")
-            new_profile = get_orcid_ids(id)
+            new_profile = get_infos(id)
             # se for chamado com sucesso a API:
             if new_profile:
                 profiles.append(new_profile)
