@@ -26,6 +26,7 @@
 # }
 
 from app import mongo
+from app.collector import get_infos
 
 # Get investigator with orcid_id "id"
 def get_profile(id):
@@ -45,3 +46,16 @@ def insert_profile(data):
     if mongo.db is not None:
         #  insert new document aka python dict
         mongo.db.investigators.insert_one(data)
+
+def update_all():
+    if mongo.db is not None:
+        all_profiles = mongo.db.investigators.find()
+        for profile in all_profiles:
+            id = profile['orcid_id']
+            print("vou buscar infos", id)
+            new_info = get_infos(id)
+            if new_info != profile:
+                print("é diferente do q o que tenho, vou atualizar BD")
+                update_profile(id, new_info)
+            else:
+                print("igual, nao ha updates", id)

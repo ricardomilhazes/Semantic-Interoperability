@@ -1,6 +1,6 @@
-from app import app
+from app import app, scheduler
 from flask import render_template, request, redirect, url_for
-from app.models import get_profile, insert_profile
+from app.models import get_profile, insert_profile, update_all
 from app.collector import get_infos
 
 @app.route('/', methods = ['POST', 'GET'])
@@ -38,3 +38,10 @@ def search(ids):
             print("tenho na db")
             profiles.append(profile)
     return render_template('profile.html', profiles=profiles)
+
+# every sunday at midnight (while the server is running) this task will be run in background
+@scheduler.task('cron', id='scheduled_task', day_of_week='sun', hour=0)
+def update_profiles():
+    print('Scheduled Task now running')
+    update_all()
+    print('Scheduled Task done!')
