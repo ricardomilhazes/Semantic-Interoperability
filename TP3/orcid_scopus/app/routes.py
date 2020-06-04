@@ -39,6 +39,11 @@ def search(ids):
             profiles.append(profile)
     return render_template('profile.html', profiles=profiles)
 
+@app.route('/benchmarking')
+def benchmarking():
+    return render_template('benchmarking.html')
+
+
 # every sunday at midnight (while the server is running) this task will be run in background
 @scheduler.task('cron', id='scheduled_task', day_of_week='sun', hour=0)
 def update_profiles():

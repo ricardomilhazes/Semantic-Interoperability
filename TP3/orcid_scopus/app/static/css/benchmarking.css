@@ -1,0 +1,29 @@
+#images
+{
+	margin: auto;
+	text-align: center;
+	background: white;
+    height: 20vh;
+    display: table;
+}
+
+#images img {
+    width: 25vw;
+    vertical-align: unset;
+}
+
+#plus {
+	width: 5vw !important;
+	margin-right: 2vw;
+    margin-left: 2vw;
+    margin-bottom: 2vh;
+}
+
+.container{
+    margin: auto; 
+    margin-top: 5vh;
+}
+
+h1 {
+    text-align: center;
+}

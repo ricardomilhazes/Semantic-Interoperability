@@ -4,6 +4,7 @@
       <meta charset="UTF-8">
       <title>Orcid+Scopus - Home</title>
       <link rel="stylesheet" href="{{ url_for('static', filename='css/search.css') }}">
+      <link rel="stylesheet" href="{{ url_for('static', filename='css/css-loader.css') }}">
    </head>
    <body>
 
@@ -16,9 +17,9 @@
       <div id="cover">
          <form action="{{ url_for('index') }}" method="post">
            <div class="tb">
-             <div class="td"><input type="text" name="ids" placeholder="Search" required></div>
+             <div class="td"><input id="input" type="text" name="ids" placeholder="Search" required></div>
              <div class="td" id="s-cover">
-               <button type="submit">
+               <button id="search" type="submit">
                  <div id="s-circle"></div>
                  <span></span>
                </button>
@@ -27,6 +28,8 @@
          </form>
          <h3>Search by ORCID ID</h3>
        </div>
+
+       <div id="loader" data-text="Searching..." data-blink class="loader loader-default"></div>
       
    </body>
 </html>
@@ -34,3 +37,10 @@
 <script src="{{url_for('static', filename='js/jquery.min.js')}}"></script>
 <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js" integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6" crossorigin="anonymous"></script>
+
+<script>
+  $('#search').click(() => {
+    if ($('#inpunt').val() != '' && $('#inpunt').val() != undefined && $('#inpunt').val() != null)
+      $('#loader').addClass('is-active')
+  });
+</script>
