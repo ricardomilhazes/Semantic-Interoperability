@@ -1,4 +1,6 @@
 TP3/orcid_scopus/venv
 TP3/orcid_scopus/app/.env
+TP3/orcid_scopus/app/config.py
 TP3/orcid_scopus/__pycache__
 TP3/orcid_scopus/app/__pycache__
+*.json
