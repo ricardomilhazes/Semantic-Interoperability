@@ -79,6 +79,10 @@ def get_infos(ORCID_ID):
     # request the ORCID API the authors works
     works = get_works(ORCID_ID)
 
+    # print("WORKS:", works)
+    with open('works.json', 'w', encoding='utf-8') as f:
+        json.dump(works, f, ensure_ascii=False, indent=4)
+
     pubs = []
     titles = []
     eids = []
@@ -102,18 +106,20 @@ def get_infos(ORCID_ID):
                 
                 has_eid = False
                 # check external ids
-                for external_id in summary['external-ids']['external-id']:
-                    # if has eid, then fetch Scopus Infos
-                    if external_id['external-id-type'] == 'eid':
-                        pub['scopus'] = {}
-                        pub['scopus']['eid'] = external_id['external-id-value'][7:]
-                        eids.append(pub['scopus']['eid'])
-                        has_eid = True
+                if 'external-ids' in summary:
+                    if summary['external-ids'] is not None:
+                        for external_id in summary['external-ids']['external-id']:
+                                # if has eid, then gonna need to fetch Scopus Infos
+                                if external_id['external-id-type'] == 'eid':
+                                    pub['scopus'] = {}
+                                    pub['scopus']['eid'] = external_id['external-id-value'][7:]
+                                    eids.append(pub['scopus']['eid'])
+                                    has_eid = True
 
-                    # if has wosuid, then add WOS ID to the publication info
-                    if external_id['external-id-type'] == 'wosuid':
-                        pub['webofscience'] = {}
-                        pub['webofscience']['wos'] = external_id['external-id-value']
+                                # if has wosuid, then add WOS ID to the publication info
+                                if external_id['external-id-type'] == 'wosuid':
+                                    pub['webofscience'] = {}
+                                    pub['webofscience']['wos'] = external_id['external-id-value']
                 
                 if not has_eid:
                     eids.append(-1)
