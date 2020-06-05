@@ -142,14 +142,15 @@ def get_infos(ORCID_ID):
                     pubs[idx]['scopus']['num_quotes'] = cites
 
         time2 = time.time()
-        print("time:", time2-time1)
+        totalTime = time2 - time1
+        print("time:", totalTime)
 
     investigator_document["publications"] = pubs
 
     with open('machado.json', 'w', encoding='utf-8') as f:
         json.dump(investigator_document, f, ensure_ascii=False, indent=4)
 
-    return investigator_document
+    return totalTime, investigator_document
 
 
     # for r in results['group']:

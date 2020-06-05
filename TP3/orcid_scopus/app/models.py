@@ -59,3 +59,9 @@ def update_all():
                 update_profile(id, new_info)
             else:
                 print("igual, nao ha updates", id)
+    return len(all_profiles)
+
+def insert_benchmark(data):
+    if mongo.db is not None:
+        #  insert new document aka python dict
+        mongo.db.benchmarking.insert_one(data)
