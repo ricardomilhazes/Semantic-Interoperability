@@ -59,15 +59,47 @@ def get_works(ORCID_ID):
     
     return works.json()
 
+def get_sjr(eid, eids, pubs):
+    # sleep randomly between 0 and 2 secs in order to not get 429: TOO MANY REQUESTS
+    time.sleep(random.randint(0,2))
+
+    idx = eids.index(eid)
+
+    if 'local' in pubs[idx] and pubs[idx]['local'] is not None:
+        title = pubs[idx]['local']
+
+        url = ("http://api.elsevier.com/content/serial/title?title="
+            + title)
+        
+        serial = requests.get(url,headers={'Accept':'application/json','X-ELS-APIKey': SCOPUS_API_KEY})
+        
+        if serial.status_code > 400:
+            print(serial.status_code)
+            return None, None
+        else:
+            vals = serial.json()
+            with open('sjr.json', 'w', encoding='utf-8') as f:
+                json.dump(vals, f, ensure_ascii=False, indent=4)
+            sjrs = []
+            if 'entry' in vals['serial-metadata-response']:
+                for entry in vals['serial-metadata-response']['entry']:
+                    if entry['dc:title'].lower() == title.lower():
+                        if 'SJRList' in entry and entry['SJRList'] is not None:
+                            for sjr in entry['SJRList']['SJR']:
+                                sjrs.append(sjr['@year'] + ': ' + sjr['$'])
+            return idx, sjrs
+    else:
+        return None, None
+
 def get_infos(ORCID_ID):
     time1 = time.time()
 
     # request the ORCID API the authors personal info
     personal_info = get_personal_info(ORCID_ID)
     if personal_info:
-        name = personal_info['name']['credit-name']['value']
+        name = personal_info['name']['given-names']['value'] + ' ' + personal_info['name']['family-name']['value']
     else:
-        return None
+        return -1, None
 
     # init result dict
     investigator_document = {
@@ -129,6 +161,18 @@ def get_infos(ORCID_ID):
     print("pubs:", len(pubs))
     print("eids:", len(eids))
 
+    # GET SJR
+    with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
+        future_to_url = (executor.submit(get_sjr, eid, eids, pubs) for eid in [val for val in eids if val!=-1])
+        for future in concurrent.futures.as_completed(future_to_url):
+            idx, sjr = future.result(timeout=TIMEOUT)
+            if idx and sjr:
+                # get SJR
+                if 'local' in pubs[idx] and pubs[idx]['local'] is not None:
+                    pubs[idx]['scopus']['sjr'] = sjr
+        print("acabei SJR")
+
+    # GET AUTHORS AND CITES
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         future_to_url = (executor.submit(get_scopus_info, eid) for eid in [val for val in eids if val!=-1])
         for future in concurrent.futures.as_completed(future_to_url):
@@ -151,58 +195,3 @@ def get_infos(ORCID_ID):
         json.dump(investigator_document, f, ensure_ascii=False, indent=4)
 
     return totalTime, investigator_document
-
-
-    # for r in results['group']:
-    #     for r2 in r['work-summary']:
-    #         try:
-    #             my_list.append(r2['url']['value'])
-    #             type_ = r2['type']
-    #         except:
-    #             my_list.append('None')
-
-    # publications = []
-
-    # info = {
-    #             "title" : '',
-    #             "year" : '',
-    #             "local" : '',
-    #             "scopus": {
-    #                 "eid" : '',
-    #                 "type" : '',
-    #                 "authors" : '',
-    #                 "num_quotes" : '',
-    #                 "sjr" : '',
-    #             },
-    #             "webofscience": {
-    #                 "wos" : '',
-    #                 "type" : ''
-    #             }
-    #         }
-
-    # my_list2 = []
-    
-    # print("mylist:",len(my_list))
-    # for r in my_list:
-    #     print("r:",r)
-    #     info["scopus"]["type"] = type_
-    #     if r.find('eid=') > 0:
-    #         k1 = r.find('eid=')
-    #         k2 = r.find('&',k1)
-    #         if r[k1+11:k2] not in my_list2:
-    #             eid = (r[k1+11:k2])
-    #             authors, title, dt, cites = get_scopus_info(eid)
-    #             info["title"] = title
-    #             info["year"] = dt.year
-    #             info["scopus"]["eid"] = eid
-    #             info["scopus"]["authors"] = authors
-    #             info["scopus"]["num_quotes"] = cites
-    #             publications.append(info)
-    #             my_list2.append(r[k1+11:k2])
-
-    # 
-
-    # print(investigator_document)
-    # return investigator_document
-
-# get_infos('0000-0003-4121-6169')
