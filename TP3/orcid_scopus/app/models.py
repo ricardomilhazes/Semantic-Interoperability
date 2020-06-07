@@ -65,3 +65,44 @@ def insert_benchmark(data):
     if mongo.db is not None:
         #  insert new document aka python dict
         mongo.db.benchmarking.insert_one(data)
+
+def get_api_benchmark():
+    if mongo.db is not None:
+        return mongo.db.benchmarking.find({'type': 'api'})
+    else:
+        return None
+
+def get_db_benchmark():
+    if mongo.db is not None:
+        return mongo.db.benchmarking.find({'type': 'db'})
+    else:
+        return None
+
+def get_weekly_updates_benchmark():
+    if mongo.db is not None:
+        return mongo.db.benchmarking.find({'type': 'update'})
+    else:
+        return None
+
+def get_values(list):
+    res = {}
+    for doc in list:
+        num_pubs = doc['num_pubs']
+        if num_pubs in res:
+            res[num_pubs]['times'].append(doc['time'])
+            res[num_pubs]['time_average'] = sum(res[num_pubs]['times']) / len(res[num_pubs]['times'])
+            if 'errors' in doc:
+                res[num_pubs]['errors'].append(doc['errors'])
+                res[num_pubs]['error_average'] = ( sum(res[num_pubs]['errors']) / len(res[num_pubs]['errors']) ) / num_pubs
+        else:
+            res[num_pubs] = {}
+            res[num_pubs]['times'] = []
+            res[num_pubs]['times'].append(doc['time'])
+            res[num_pubs]['time_average'] = 0
+            res[num_pubs]['time_average'] = sum(res[num_pubs]['times']) / len(res[num_pubs]['times'])
+            if 'errors' in doc:
+                res[num_pubs]['errors'] = []
+                res[num_pubs]['errors'].append(doc['errors'])
+                res[num_pubs]['error_average'] = 0
+                res[num_pubs]['error_average'] = ( sum(res[num_pubs]['errors']) / len(res[num_pubs]['errors']) ) / num_pubs
+    return res

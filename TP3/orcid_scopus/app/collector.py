@@ -26,20 +26,29 @@ def get_scopus_info(SCOPUS_ID):
 
     if resp.status_code > 400:
         print(resp.status_code)
-        return SCOPUS_ID, '', -1
+        return SCOPUS_ID, '', -1, 1
 
     results = json.loads(resp.text.encode('utf-8'))
 
-    authors = ', '.join([au['ce:indexed-name'] for au in results['abstracts-retrieval-response']['authors']['author']])
+    authors = ''
+    cites = 0
+
+    if results['abstracts-retrieval-response'] is not None:
+        if 'authors' in results['abstracts-retrieval-response'] and results['abstracts-retrieval-response']['authors'] is not None:
+            authors = ', '.join([au['ce:indexed-name'] for au in results['abstracts-retrieval-response']['authors']['author']])
     # title = results['abstracts-retrieval-response']['coredata']['dc:title']
 
     # date = results['abstracts-retrieval-response']['coredata']['prism:coverDate']
     # dt = datetime.strptime(date, '%Y-%m-%d')
 
-    cites = int(results['abstracts-retrieval-response']['coredata']['citedby-count'].encode('utf-8'))
+        if 'coredata' in results['abstracts-retrieval-response'] and results['abstracts-retrieval-response']['coredata'] is not None:
+            cites = int(results['abstracts-retrieval-response']['coredata']['citedby-count'].encode('utf-8'))
+
+    else:
+        return SCOPUS_ID, authors, cites, 0
     
     # return authors, title, dt, cites
-    return SCOPUS_ID, authors, cites
+    return SCOPUS_ID, authors, cites, 0
 
 def get_personal_info(ORCID_ID):
     person = requests.get("https://pub.orcid.org/v3.0/"+ORCID_ID+'/person',
@@ -75,11 +84,11 @@ def get_sjr(eid, eids, pubs):
         
         if serial.status_code > 400:
             print(serial.status_code)
-            return None, None
+            return None, None, 1
         else:
             vals = serial.json()
-            with open('sjr.json', 'w', encoding='utf-8') as f:
-                json.dump(vals, f, ensure_ascii=False, indent=4)
+            # with open('sjr.json', 'w', encoding='utf-8') as f:
+            #     json.dump(vals, f, ensure_ascii=False, indent=4)
             sjrs = []
             if 'entry' in vals['serial-metadata-response']:
                 for entry in vals['serial-metadata-response']['entry']:
@@ -87,12 +96,14 @@ def get_sjr(eid, eids, pubs):
                         if 'SJRList' in entry and entry['SJRList'] is not None:
                             for sjr in entry['SJRList']['SJR']:
                                 sjrs.append(sjr['@year'] + ': ' + sjr['$'])
-            return idx, sjrs
+            return idx, sjrs, 0
     else:
-        return None, None
+        return None, None, 0
 
 def get_infos(ORCID_ID):
     time1 = time.time()
+
+    errors = 0
 
     # request the ORCID API the authors personal info
     personal_info = get_personal_info(ORCID_ID)
@@ -112,8 +123,8 @@ def get_infos(ORCID_ID):
     works = get_works(ORCID_ID)
 
     # print("WORKS:", works)
-    with open('works.json', 'w', encoding='utf-8') as f:
-        json.dump(works, f, ensure_ascii=False, indent=4)
+    # with open('works.json', 'w', encoding='utf-8') as f:
+    #     json.dump(works, f, ensure_ascii=False, indent=4)
 
     pubs = []
     titles = []
@@ -165,7 +176,8 @@ def get_infos(ORCID_ID):
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         future_to_url = (executor.submit(get_sjr, eid, eids, pubs) for eid in [val for val in eids if val!=-1])
         for future in concurrent.futures.as_completed(future_to_url):
-            idx, sjr = future.result(timeout=TIMEOUT)
+            idx, sjr, ers = future.result(timeout=TIMEOUT)
+            errors += ers
             if idx and sjr:
                 # get SJR
                 if 'local' in pubs[idx] and pubs[idx]['local'] is not None:
@@ -176,7 +188,8 @@ def get_infos(ORCID_ID):
     with concurrent.futures.ThreadPoolExecutor(max_workers=CONNECTIONS) as executor:
         future_to_url = (executor.submit(get_scopus_info, eid) for eid in [val for val in eids if val!=-1])
         for future in concurrent.futures.as_completed(future_to_url):
-            eid, authors, cites = future.result(timeout=TIMEOUT)
+            eid, authors, cites, ers = future.result(timeout=TIMEOUT)
+            errors += ers
             # print(eid, authors, cites)
             idx = eids.index(eid)
             if idx:
@@ -189,9 +202,10 @@ def get_infos(ORCID_ID):
         totalTime = time2 - time1
         print("time:", totalTime)
 
+    print("ERRORS:", errors)
     investigator_document["publications"] = pubs
 
     with open('machado.json', 'w', encoding='utf-8') as f:
         json.dump(investigator_document, f, ensure_ascii=False, indent=4)
 
-    return totalTime, investigator_document
+    return totalTime, investigator_document, errors

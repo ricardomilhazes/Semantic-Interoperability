@@ -3,37 +3,36 @@
 
   <head>
     <meta charset="UTF-8">
-    <title>Orcid+Scopus - Home</title>
+    <title>Orcid+Scopus - Benchmarking</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/benchmarking.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.1.3/css/bootstrap.css">
     <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='css/Chart.min.css') }}">
  </head>
  <body>
-    <div id="images">
+    <div id="images" onclick=window.location.href="{{ url_for('index') }}">
        <img src="{{ url_for('static', filename='img/orcid.png') }}" alt="ORCID">
        <img id="plus" src="{{ url_for('static', filename='img/plus.png') }}" alt="plus">
        <img src="{{ url_for('static', filename='img/scopus.png') }}" alt="SCOPUS">
     </div>
 
     <div class="container">
+      <h1>API Data Collection</h1>
       <div class="row">
         <div class="col-6">
-          <h1>Teste1</h1>
+          <h3>Average Time by # Publications</h3>
           <div class="chart-area">
             <canvas id="myChart"></canvas>
           </div>
         </div>
         <div class="col-6">
-          <h1>Teste2</h1>
+          <h3>Average Error % by # Publications</h3>
         </div>
       </div>
-      
+
+      <h1>Database Data Collection</h1>
       <div class="row">
-        <div class="col-6">
-          <h1>Teste3</h1>
-        </div>
-        <div class="col-6">
-          <h1>Teste4</h1>
+        <div class="col-6"></div>
+          <h3>Average Time by # Publications</h3>
         </div>
       </div>
     </div>
